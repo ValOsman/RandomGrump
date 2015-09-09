@@ -30,7 +30,8 @@ function space() {
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
     <link rel="stylesheet" href="bootstrap/css/bootstrap.css"></link>
     <style>
       .hide {
@@ -103,12 +104,14 @@ function space() {
       </div>
       ||
       <input class="btn btn-primary" id="makeBig" type="submit" name="makeBig" value="MAKE BIG" />
+      ||
+      <input class="btn btn-primary" id="objectTest" type="submit" name="objectTest" value="Object Test" />
     </div>
     <div>
       <h3>Options</h3>
       <form id="playerForm" action="ajax.php" method="POST">
-        <input type="radio" name="table" value="video">Video<br>
-        <input type="radio" checked="checked" name="table" value="playlist">Playlist<br>
+        <input type="radio" name="table" checked="checked" value="video">Video<br>
+        <input type="radio" name="table" value="playlist">Playlist<br>
         <input type="radio" name="table" value="both">Both<br>
         <hr>
         <input type="checkbox" name="show" value="all">All<br>
@@ -125,65 +128,107 @@ function space() {
 
 
 <script>
-    // 2. This code loads the IFrame Player API code asynchronously.
-    var tag = document.createElement('script');
+"use strict";
 
-    tag.src = "https://www.youtube.com/iframe_api";
-    var firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    function MediaController() {
+      this.mediaArray;
+      this.mediaIndex = 0;
+      this.player;
+      this.playlistIndex = 0;
+    }
 
-    // 3. This function creates an <iframe> (and YouTube player)
-    //    after the API code downloads.
+    MediaController.prototype.mediaLoader = function() {
+          console.log("Media controller mediaLoader()");
+          if (this.mediaArray[this.mediaIndex].object_type === "video") {
+              console.log("Media controller video loaded");
+              $("#playlistButtons").removeClass("buttonContainer").addClass("hide");
+              $("#videoButtons").addClass("buttonContainer").removeClass("hide");
+              this.player.loadVideoById(this.mediaArray[this.mediaIndex].object_id);
+              //console.log(this);
+              function onPlayerStateChange(mediaController) {
+                  return function(event) {
+                      if(event.data === 0) {
+                          console.log("Woo!");
+                          mediaController.incMediaIndex();
+                          mediaController.mediaLoader();
+                      }
+                  }
+              }
+              this.player.addEventListener('onStateChange', onPlayerStateChange(this));
+          } 
+          else if (this.mediaArray[this.mediaIndex].object_type === "playlist") {
+              console.log("Media controller playlist loaded");
+              $("#videoButtons").removeClass("buttonContainer").addClass("hide");
+              $("#playlistButtons").addClass("buttonContainer").removeClass("hide");
+              this.player.loadPlaylist({
+                list: this.mediaArray[this.mediaIndex].object_id,
+                listType: "playlist"
+              });
+              function onPlayerStateChange(mediaController) {
+                  return function(event) {
+                    if(event.data === 1 || event.data === -1) {
+                      console.log("Playlist video cued")
+                      mediaController.playlistIndex = mediaController.player.getPlaylistIndex();
+                    }
+                    if(event.data === 0 && mediaController.playlistIndex === mediaController.player.getPlaylist().length - 1) {
+                      console.log("Load the next media object");
+                      mediaController.playlistIndex = 0;
+                      mediaController.incMediaIndex();
+                      mediaController.mediaLoader();
+                    }
+                  }
+              }
+              this.player.addEventListener('onStateChange', onPlayerStateChange(this));
+          }
+      }
+
+      MediaController.prototype.incMediaIndex = function() {
+        if (this.mediaIndex + 1 === this.mediaArray.length) {
+          this.mediaIndex = 0;
+        }
+        else {
+          this.mediaIndex++;
+        }
+      }
+
+      MediaController.prototype.decMediaIndex = function() {
+        if (this.mediaIndex === 0) {
+          this.mediaIndex = this.mediaArray.length - 1;
+        }
+        else {
+          this.mediaIndex--;
+        }
+      }
+    
+
+
+    var mediaController = new MediaController();
     var player;
-    var initialVideo;
-
-    shuffleOne("video").done(function(result) {
-        initialVideo = result;
-    });
 
     function onYouTubeIframeAPIReady() {
-      player = new YT.Player('player', {
-        height: '390',
-        width: '640',
-        videoId: initialVideo,
-        events: {
-          'onReady': onPlayerReady
-          // 'onStateChange': onPlayerStateChange
-        }
+      var initialVideo;
+      shuffleOne("video").done(function(result) {
+          initialVideo = result;      
+          player = new YT.Player('player', {
+            height: '390',
+            width: '640',
+            videoId: initialVideo,
+            events: {
+              'onReady': onPlayerReady
+            }
+          });
       });
+      mediaController.player = player;
     }
-    //Event listener debugger
-//     (function () {
-//     var ael = Node.prototype.addEventListener,
-//         rel = Node.prototype.removeEventListener;
-//     Node.prototype.addEventListener = function (a, b, c) {
-//         console.log('Listener', 'added', this, a, b, c);
-//         ael.apply(this, arguments);
-//     };
-//     Node.prototype.removeEventListener = function (a, b, c) {
-//         console.log('Listener', 'removed', this, a, b, c);
-//         rel.apply(this, arguments);
-//     };
-// }());
 
-    // player.addEventListener("onStateChange", "onPlayerStateChange");
-    // player.removeEventListener("onStateChange", "onPlayerStateChange");
 
-  // 4. The API will call this function when the video player is ready.
-    function onPlayerReady(event) {
-      // event.target.playVideo();
-      player.addEventListener("onStateChange", "onPlayerStateChange");      
+    function onPlayerReady(event) {   
       console.log("Player loaded");
+      mediaController.player = player;
     }
 
     // 5. The API calls this function when the player's state changes.
-    function onPlayerStateChange(event) {
-      if (event.data == YT.PlayerState.ENDED) {
-        console.log("Alas! I have ended!");
-        //shuffleOne("video");
-        //player.playVideo();
-      }
-    }
+    // function onPlayerStateChange(event) {}
 
     function shuffleOne(tableName) {
           return $.ajax({
@@ -202,10 +247,8 @@ function space() {
     }
 
     function printObject(index, position) {
-      console.log(index)
       var $playerList = $("#playerList");
-      console.log($playerList.find(":last-child"));
-      var button = "<button type=\"button\" data-indexNum=\"" + index + "\" class=\"list-group-item player-list-btn\">" + (index+1) + ". " + resultArray[index]["object_title"] + "</button>";
+      var button = "<button type=\"button\" data-indexNum=\"" + index + "\" class=\"list-group-item player-list-btn\">" + (index+1) + ". " + resultArray[index].object_title + "</button>";
       switch (position) {
           case "before":
               $playerList.find("button:last").before(button);
@@ -300,66 +343,6 @@ function space() {
       $("button[data-indexnum=" + objectIndex +"]").addClass("active");
     }
 
-   function objectLoader() {
-        console.log("Object loader | ObjectIndex: " + objectIndex);
-        updateObjectList();
-        if (resultArray[objectIndex]["object_type"] === "playlist") {
-            $("#videoButtons").removeClass("buttonContainer").addClass("hide");
-            $("#playlistButtons").addClass("buttonContainer").removeClass("hide");
-            console.log("Loading a playlist object");
-            console.log(resultArray[objectIndex]["object_id"]);
-            player.loadPlaylist({
-              list: resultArray[objectIndex]["object_id"],
-              listType: "playlist"
-            });
-            playlistLength = resultArray[objectIndex]["object_id"];
-            playlistIndex = 0;
-            onPlayerStateChange = function(event) {
-                if(event.data === 1 || event.data === -1) {
-                  console.log("Video cued")
-                  playlistIndex = player.getPlaylistIndex();
-                }
-                if(event.data === 0 && playlistIndex === player.getPlaylist().length - 1) {
-                  console.log("Load the next object");
-                  playlistIndex = 0;
-                  incrementObjectIndex();
-                  objectLoader();
-                }
-            }
-        } else if (resultArray[objectIndex]["object_type"] === "video") {
-              $("#playlistButtons").removeClass("buttonContainer").addClass("hide");
-              $("#videoButtons").addClass("buttonContainer").removeClass("hide");
-              console.log("Loading a video object");
-              player.loadVideoById(resultArray[objectIndex]["object_id"]);
-              onPlayerStateChange = function(event) {
-                  if(event.data === 0) {
-                      console.log("Load the next object");
-                      playlistIndex = 0;
-                      incrementObjectIndex();
-                      objectLoader();
-                  }              
-              }
-        }
-    }
-
-    function incrementObjectIndex(){
-      if (objectIndex + 1 == resultArray.length) {
-        objectIndex = 0;
-      }
-      else {
-        objectIndex += 1;
-      }
-    }
-
-    function decrementObjectIndex(){
-      if (objectIndex == 0) {
-        objectIndex = resultArray.length - 1;
-      }
-      else {
-        objectIndex -= 1;
-      }
-    }
-
 
     //BUTTON BINDINGS
     $('#videoBtn').on('click', function(e){
@@ -393,40 +376,64 @@ function space() {
         query["show"] = JSON.stringify(showArray);
         console.log(query);
         returnQuery(query).done(function(result) {
-          resultString = result.split("xxx");
-          resultArray = JSON.parse(resultString[resultString.length - 1]);
+          var resultString = result.split("xxx");
+          var resultArray = JSON.parse(resultString[resultString.length - 1]);
           console.log("POST: " + resultString[0]);
           console.log("$Shows: " + resultString[1]);
           console.log("Query:" + resultString[2]);
-          objectIndex = 0;
-          printObjectList();
-          objectLoader();
+          var objectIndex = 0;
+          //printObjectList();
+          //objectLoader();
+          mediaController.mediaArray = resultArray;
+          mediaController.mediaLoader();
         });
     });
 
     $('#nextVideoBtn').on('click', function(e){
-        incrementObjectIndex();
-        objectLoader();
+        mediaController.incMediaIndex();
+        mediaController.mediaLoader();
     });
 
     $('#prevVideoBtn').on('click', function(e){
-        decrementObjectIndex();
-        objectLoader();
+        mediaController.decMediaIndex();
+        mediaController.mediaLoader();
     });
 
     $('#nextPlaylistBtn').on('click', function(e){
-        incrementObjectIndex();
-        objectLoader();
+        mediaController.incMediaIndex();
+        mediaController.mediaLoader();
     });
 
     $('#prevPlaylistBtn').on('click', function(e){
-        decrementObjectIndex();
-        objectLoader();
+        mediaController.decMediaIndex();
+        mediaController.mediaLoader();
     });
 
     $('#makeBig').on('click', function(e){
         player.setSize(1280, 720);
     });
+
+    $('#objectTest').on('click', function(e){
+        shuffleOne("video").done(function(result) {
+          mediaController.player.loadVideoById(result);
+        });
+    });
+
+
+    //Event listener debugger
+    //(function () {
+    //     var ael = Node.prototype.addEventListener,
+    //         rel = Node.prototype.removeEventListener;
+    //     Node.prototype.addEventListener = function (a, b, c) {
+    //         console.log('Listener', 'added', this, a, b, c);
+    //         ael.apply(this, arguments);
+    //     };
+    //     Node.prototype.removeEventListener = function (a, b, c) {
+    //         console.log('Listener', 'removed', this, a, b, c);
+    //         rel.apply(this, arguments);
+    //     };
+    // }(
+    //));
 </script>
   </body>
 </html>
