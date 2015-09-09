@@ -49,12 +49,25 @@ function space() {
         text-align: justify;
       }
 
+/*      @keyframes playlistEntries {
+        from{opacity: 0;}
+        to {opacity: 100;}
+      }   */  
+  
+
       .list-group-item {
         padding: 5px 10px !important;
+        animation-name: playlistEntries;
+        animation-duration: 3s;
       }
 
       button.list-group-item:hover {
         background-color: #ccc;
+      }
+
+      .player-list-control span{
+        text-align: center;
+        width: 100%;
       }
 
       #playerContainer {
@@ -65,6 +78,7 @@ function space() {
         display: block;
       }
 
+
     </style>
   </head>
   <body class="container-fluid">
@@ -72,23 +86,23 @@ function space() {
       <div id="player">        
       </div>
     </div>
-    <div id="playerList" class="col-md-3 pull-right">
+    <div id="playerList" class="col-md-3 pull-right list-group">
     </div>
     <div id="controls">
       <div id="playerButtons" class="buttonContainer">
-        <input id="videoBtn" type="submit" name="video" value="New video" />
-        <input id="playlistBtn" type="submit" name="playlist" value="New playlist" />
+        <input class="btn btn-primary" id="videoBtn" type="submit" name="video" value="New video" />
+        <input class="btn btn-primary" id="playlistBtn" type="submit" name="playlist" value="New playlist" />
       </div>
       <div id="videoButtons" class="hide">
-        <input id="nextVideoBtn" type="submit" name="nextVideo" value="Next video" />
-        <input id="prevVideoBtn" type="submit" name="prevVideo" value="Previous video" />
+        <input class="btn btn-primary" id="nextVideoBtn" type="submit" name="nextVideo" value="Next video" />
+        <input class="btn btn-primary" id="prevVideoBtn" type="submit" name="prevVideo" value="Previous video" />
       </div>
       <div id="playlistButtons" class="hide">
-        <input id="nextPlaylistBtn" type="submit" name="nextPlaylist" value="Next playlist" />
-        <input id="prevPlaylistBtn" type="submit" name="prevPlaylist" value="Previous playlist" />
+        <input class="btn btn-primary" id="nextPlaylistBtn" type="submit" name="nextPlaylist" value="Next playlist" />
+        <input class="btn btn-primary" id="prevPlaylistBtn" type="submit" name="prevPlaylist" value="Previous playlist" />
       </div>
       ||
-      <input id="makeBig" type="submit" name="makeBig" value="MAKE BIG" />
+      <input class="btn btn-primary" id="makeBig" type="submit" name="makeBig" value="MAKE BIG" />
     </div>
     <div>
       <h3>Options</h3>
@@ -105,7 +119,7 @@ function space() {
         <input type="checkbox" name="show" value="steamrolled">Steam Rolled<br>
         <input type="checkbox" name="show" value="tableflip">Table Flip<br>
         <input type="checkbox" name="show" value="animated">Animated<br>
-        <input id="submit" type="submit" name="submit" value="Submit">
+        <input class="btn btn-primary" id="submit" type="submit" name="submit" value="Submit">
       </form>
     </div>
 
@@ -138,10 +152,23 @@ function space() {
         }
       });
     }
+    //Event listener debugger
+//     (function () {
+//     var ael = Node.prototype.addEventListener,
+//         rel = Node.prototype.removeEventListener;
+//     Node.prototype.addEventListener = function (a, b, c) {
+//         console.log('Listener', 'added', this, a, b, c);
+//         ael.apply(this, arguments);
+//     };
+//     Node.prototype.removeEventListener = function (a, b, c) {
+//         console.log('Listener', 'removed', this, a, b, c);
+//         rel.apply(this, arguments);
+//     };
+// }());
 
     // player.addEventListener("onStateChange", "onPlayerStateChange");
     // player.removeEventListener("onStateChange", "onPlayerStateChange");
-    
+
   // 4. The API will call this function when the video player is ready.
     function onPlayerReady(event) {
       // event.target.playVideo();
@@ -174,21 +201,98 @@ function space() {
         });  
     }
 
+    function printObject(index, position) {
+      console.log(index)
+      var $playerList = $("#playerList");
+      console.log($playerList.find(":last-child"));
+      var button = "<button type=\"button\" data-indexNum=\"" + index + "\" class=\"list-group-item player-list-btn\">" + (index+1) + ". " + resultArray[index]["object_title"] + "</button>";
+      switch (position) {
+          case "before":
+              $playerList.find("button:last").before(button);
+              break;
+          case "after":
+              $playerList.find("button:first").after(button);
+      }      
+      $(".player-list-btn[data-indexnum=" + index + "]").on('click', function(e){
+        console.log($(this)[0].dataset.indexnum);
+        objectIndex = parseInt($(this)[0].dataset.indexnum);
+        objectLoader();
+      });      
+    }
+
     function printObjectList() {
-      document.getElementById("playerList").innerHTML = "";
-      $("#playerList").addClass("list-group");
-      document.getElementById("playerList").innerHTML += "<button type=\"button\" data-indexnum=\"0" + "\" class=\"list-group-item active player-list-btn\">" + 1 + ". " + resultArray[0]["object_title"] + "</button>";
-      for (var i = 1; i < resultArray.length; i++) {
-          document.getElementById("playerList").innerHTML += "<button type=\"button\" data-indexNum=\"" + i + "\" class=\"list-group-item player-list-btn\">" + (i+1) + ". " + resultArray[i]["object_title"] + "</button>";
+      var startTime = Date.now();
+      MAX_PLAYERLIST_COUNT = 15;
+      playerListHead = 0;
+      playerListRear = 0;
+      if (resultArray.length < MAX_PLAYERLIST_COUNT) {
+        playerListRear = resultArray.length - 1;
+      } else {
+        playerListRear = MAX_PLAYERLIST_COUNT-1;
       }
-      console.log(resultArray);
+      //var playerListIndex = 0;
+      document.getElementById("playerList").innerHTML = "";
+      document.getElementById("playerList").innerHTML += "<button type=\"button\" data-direction=\"up\" class=\"player-list-control list-group-item\"><span class=\"glyphicon glyphicon-chevron-up\"></span></button>";
+      document.getElementById("playerList").innerHTML += "<button type=\"button\" data-direction=\"down\" class=\"player-list-control list-group-item\"><span class=\"glyphicon glyphicon-chevron-down\"></span></button>";
+      //$("#playerList").addClass("list-group");
+      var i = 0;
+      while (i >= playerListHead && i <= playerListRear) {
+          printObject(i, "before");
+          i++;
+      }
+      $("button[data-indexnum=" + 0 +"]").addClass("active");
+      var EndTime = endTime = Date.now();
+      console.log("Print time elapsed:" + (endTime - startTime));
+      //console.log(resultArray);
+      // document.getElementById("playerList").innerHTML += "<button type=\"button\" class=\"player-list-control list-group-item\"><span class=\"glyphicon glyphicon-chevron-down\"></span></button>";
       $(".player-list-btn").on('click', function(e){
         console.log($(this)[0].dataset.indexnum);
         objectIndex = parseInt($(this)[0].dataset.indexnum);
         objectLoader();
-        //console.log("Player list button clicked");
-        //console.log(objectId);
-      })
+      //   //console.log("Player list button clicked");
+      //   //console.log(objectId);
+      });
+      $(".player-list-control").on('click', function(e){
+        if ($(this)[0].dataset.direction === "down") {
+          $("button[data-indexnum=" + playerListHead +"]").remove();
+          if (playerListHead + 1 === resultArray.length) {
+              playerListHead = 0;
+          }
+            else {
+              playerListHead++;
+          }
+          if (playerListRear + 1 === resultArray.length) {
+              playerListRear = 0;
+          }
+            else {
+              playerListRear++;
+          }
+          printObject(playerListRear, "before");
+          updateObjectList()
+          //incrementObjectIndex();
+          //objectLoader();
+        }
+        else if ($(this)[0].dataset.direction === "up") {
+          $("button[data-indexnum=" + playerListRear +"]").remove();
+            if (playerListHead === 0) {
+                playerListHead = resultArray.length - 1;
+              }
+              else {
+                playerListHead--;
+            }
+            if (playerListRear === 0) {
+                playerListRear = resultArray.length - 1;
+              }
+              else {
+                playerListRear--;
+            }
+            console.log(playerListHead)
+            printObject(playerListHead,"after");
+            updateObjectList()
+            //decrementObjectIndex();
+            //objectLoader();
+        }
+      });
     }
 
     function updateObjectList() {
@@ -218,7 +322,7 @@ function space() {
                 if(event.data === 0 && playlistIndex === player.getPlaylist().length - 1) {
                   console.log("Load the next object");
                   playlistIndex = 0;
-                  objectIndex += 1;
+                  incrementObjectIndex();
                   objectLoader();
                 }
             }
@@ -231,12 +335,31 @@ function space() {
                   if(event.data === 0) {
                       console.log("Load the next object");
                       playlistIndex = 0;
-                      objectIndex += 1;
+                      incrementObjectIndex();
                       objectLoader();
                   }              
               }
         }
     }
+
+    function incrementObjectIndex(){
+      if (objectIndex + 1 == resultArray.length) {
+        objectIndex = 0;
+      }
+      else {
+        objectIndex += 1;
+      }
+    }
+
+    function decrementObjectIndex(){
+      if (objectIndex == 0) {
+        objectIndex = resultArray.length - 1;
+      }
+      else {
+        objectIndex -= 1;
+      }
+    }
+
 
     //BUTTON BINDINGS
     $('#videoBtn').on('click', function(e){
@@ -270,7 +393,6 @@ function space() {
         query["show"] = JSON.stringify(showArray);
         console.log(query);
         returnQuery(query).done(function(result) {
-          //console.log(result);
           resultString = result.split("xxx");
           resultArray = JSON.parse(resultString[resultString.length - 1]);
           console.log("POST: " + resultString[0]);
@@ -283,22 +405,22 @@ function space() {
     });
 
     $('#nextVideoBtn').on('click', function(e){
-        objectIndex += 1;
+        incrementObjectIndex();
         objectLoader();
     });
 
     $('#prevVideoBtn').on('click', function(e){
-        objectIndex -= 1;
+        decrementObjectIndex();
         objectLoader();
     });
 
     $('#nextPlaylistBtn').on('click', function(e){
-        objectIndex += 1;
+        incrementObjectIndex();
         objectLoader();
     });
 
     $('#prevPlaylistBtn').on('click', function(e){
-        objectIndex -= 1;
+        decrementObjectIndex();
         objectLoader();
     });
 
