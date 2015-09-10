@@ -38,6 +38,10 @@ function space() {
         display: none;
       }
 
+      .cursor {
+        background-color: green;
+      }
+
       .buttonContainer {
         display: inline-block;
       }
@@ -114,6 +118,10 @@ function space() {
         <input type="radio" name="table" value="playlist">Playlist<br>
         <input type="radio" name="table" value="both">Both<br>
         <hr>
+        <input type="radio" name="published" value="both" checked="checked">Both<br>
+        <input type="radio" name="published" value="jon-era">Jon Era<br>
+        <input type="radio" name="published" value="dan-era">Dan Era<br>
+        <hr>
         <input type="checkbox" name="show" value="all">All<br>
         <input type="checkbox" name="show" value="gamegrumps">Game Grumps<br>
         <input type="checkbox" name="show" value="steamtrain">Steam Train<br>
@@ -121,24 +129,32 @@ function space() {
         <input type="checkbox" name="show" value="gamegrumpsvs">Game Grumps VS<br>        
         <input type="checkbox" name="show" value="steamrolled">Steam Rolled<br>
         <input type="checkbox" name="show" value="tableflip">Table Flip<br>
-        <input type="checkbox" name="show" value="animated">Animated<br>
+        <input type="checkbox" name="show" value="animated">Animated<br>        
+
         <input class="btn btn-primary" id="submit" type="submit" name="submit" value="Submit">
       </form>
     </div>
 
 
 <script>
-"use strict";
+    "use strict";
 
     function MediaController() {
       this.mediaArray;
       this.mediaIndex = 0;
       this.player;
       this.playlistIndex = 0;
+      this.playerListController = {
+        playerListHead: 0,
+        playerListRear: 0,
+        playerListCursor: 0,
+        MAX_PLAYERLIST_COUNT: 15
+      };
     }
 
     MediaController.prototype.mediaLoader = function() {
           console.log("Media controller mediaLoader()");
+          this.updateMediaList();
           if (this.mediaArray[this.mediaIndex].object_type === "video") {
               console.log("Media controller video loaded");
               $("#playlistButtons").removeClass("buttonContainer").addClass("hide");
@@ -182,6 +198,132 @@ function space() {
           }
       }
 
+      MediaController.prototype.printMediaObject = function(index, position) {
+          console.log("MediaController printMediaObject()");
+          console.log(mediaController);
+          console.log(index);
+          var $playerList = $("#playerList");
+          var button = "<button type=\"button\" data-indexNum=\"" + index + "\" class=\"list-group-item player-list-btn\">" + (index) + ". " + mediaController.mediaArray[index].object_title + "</button>";
+          switch (position) {
+              case "before":
+                  $playerList.find("button:last").before(button);
+                  break;
+              case "after":
+                  $playerList.find("button:first").after(button);
+          }      
+          $(".player-list-btn[data-indexnum=" + index + "]").on('click', function(e){
+            console.log($(this)[0].dataset.indexnum);
+            mediaController.mediaIndex = parseInt($(this)[0].dataset.indexnum);
+            mediaController.mediaLoader();
+          });
+      }
+
+      MediaController.prototype.updateMediaList = function() {
+          console.log("MediaController updateMediaList()");
+          $(".player-list-btn").removeClass("active");
+          $("button[data-indexnum=" + this.mediaIndex +"]").addClass("active");
+      }
+
+      MediaController.prototype.moveCursor = function(direction) {
+          switch(direction) {
+            case "up":
+                if (mediaController.playerListController.playerListCursor === 0) {
+                    mediaController.playerListController.playerListCursor = mediaController.mediaArray.length - 1;
+                  }
+                  else {
+                    mediaController.playerListController.playerListCursor--;
+                }
+              break;
+            case "down":
+                if (mediaController.playerListController.playerListCursor + 1 === mediaController.mediaArray.length) {
+                    mediaController.playerListController.playerListCursor = 0;
+                }
+                  else {
+                    mediaController.playerListController.playerListCursor++;
+                }
+              break;
+          }
+          $(".player-list-btn").removeClass("cursor");
+          $("button[data-indexnum=" + this.playerListController.playerListCursor +"]").addClass("cursor");
+      }
+
+      MediaController.prototype.printMediaList = function() {
+          console.log("MediaController printMediaList()");
+          if (this.mediaArray.length < this.playerListController.MAX_PLAYERLIST_COUNT) {
+            this.playerListController.playerListRear = this.mediaArray.length - 1;
+          } else {
+            this.playerListController.playerListRear = this.playerListController.MAX_PLAYERLIST_COUNT - 1;
+          }
+          document.getElementById("playerList").innerHTML = "";
+          document.getElementById("playerList").innerHTML += "<button type=\"button\" data-direction=\"up\" class=\"player-list-control list-group-item\"><span class=\"glyphicon glyphicon-chevron-up\"></span></button>";
+          document.getElementById("playerList").innerHTML += "<button type=\"button\" data-direction=\"down\" class=\"player-list-control list-group-item\"><span class=\"glyphicon glyphicon-chevron-down\"></span></button>";
+          var i = 0;
+          console.log(this.playerListController);
+          while (i >= this.playerListController.playerListHead && i <= this.playerListController.playerListRear) {
+              this.printMediaObject(i, "before");
+              i++;
+          }
+          $("button[data-indexnum=" + 0 +"]").addClass("active");
+          // document.getElementById("playerList").innerHTML += "<button type=\"button\" class=\"player-list-control list-group-item\"><span class=\"glyphicon glyphicon-chevron-down\"></span></button>";
+          $(".player-list-btn").on('click', function(e){
+            console.log($(this)[0].dataset.indexnum);
+            this.mediaIndex = parseInt($(this)[0].dataset.indexnum);
+            mediaController.mediaLoader();
+          });
+          $(".player-list-control").on('click', function(e){
+            console.log("Before::  Head: " + mediaController.playerListController.playerListHead +
+            " Cursor: " + mediaController.playerListController.playerListCursor + 
+            " Rear: " + mediaController.playerListController.playerListRear);
+            if ($(this)[0].dataset.direction === "down") {
+                if (mediaController.playerListController.playerListCursor === mediaController.playerListController.playerListRear) {   
+                    $("button[data-indexnum=" + mediaController.playerListController.playerListHead +"]").remove();                 
+                    if (mediaController.playerListController.playerListHead + 1 === mediaController.mediaArray.length) {
+                        mediaController.playerListController.playerListHead = 0;
+                    }
+                      else {
+                        mediaController.playerListController.playerListHead++;
+                    }
+                    if (mediaController.playerListController.playerListRear + 1 === mediaController.mediaArray.length) {
+                        mediaController.playerListController.playerListRear = 0;
+                    }
+                      else {
+                        mediaController.playerListController.playerListRear++;
+                    }                            
+                    mediaController.printMediaObject(mediaController.playerListController.playerListRear, "before");
+                }
+                mediaController.moveCursor("down");
+                //mediaController.updateMediaList();
+                //mediaController.incMediaIndex();
+                //mediaController.mediaLoader();
+            }
+            else if ($(this)[0].dataset.direction === "up") {
+                if (mediaController.playerListController.playerListCursor === mediaController.playerListController.playerListHead) {
+                    $("button[data-indexnum=" + mediaController.playerListController.playerListRear +"]").remove();
+                    if (mediaController.playerListController.playerListHead === 0) {
+                        mediaController.playerListController.playerListHead = mediaController.mediaArray.length - 1;
+                      }
+                      else {
+                        mediaController.playerListController.playerListHead--;
+                    }
+                    if (mediaController.playerListController.playerListRear === 0) {
+                        mediaController.playerListController.playerListRear = mediaController.mediaArray.length - 1;
+                      }
+                      else {
+                        mediaController.playerListController.playerListRear--;
+                    }
+                    mediaController.printMediaObject(mediaController.playerListController.playerListHead,"after");
+                }
+                mediaController.moveCursor("up");
+                // mediaController.updateMediaList();
+                // mediaController.decMediaIndex();
+                // mediaController.mediaLoader();
+            }
+            console.log("After::  Head: " + mediaController.playerListController.playerListHead +
+            " Cursor: " + mediaController.playerListController.playerListCursor + 
+            " Rear: " + mediaController.playerListController.playerListRear);
+          });
+      }
+
       MediaController.prototype.incMediaIndex = function() {
         if (this.mediaIndex + 1 === this.mediaArray.length) {
           this.mediaIndex = 0;
@@ -199,11 +341,12 @@ function space() {
           this.mediaIndex--;
         }
       }
-    
 
+//////////////////////////////////////////////////
 
     var mediaController = new MediaController();
     var player;
+    const MAX_PLAYERLIST_COUNT = 15;
 
     function onYouTubeIframeAPIReady() {
       var initialVideo;
@@ -221,14 +364,10 @@ function space() {
       mediaController.player = player;
     }
 
-
     function onPlayerReady(event) {   
       console.log("Player loaded");
       mediaController.player = player;
     }
-
-    // 5. The API calls this function when the player's state changes.
-    // function onPlayerStateChange(event) {}
 
     function shuffleOne(tableName) {
           return $.ajax({
@@ -242,109 +381,12 @@ function space() {
           return $.ajax({
           url: 'ajax.php',
           type: 'POST',
-          data: {'getList': 'true', 'table': query["tableName"], 'show': query["show"]}            
+          data: {'getList': 'true', 'table': query["tableName"], 'published': query['published'], 'show': query["show"]}            
         });  
     }
 
-    function printObject(index, position) {
-      var $playerList = $("#playerList");
-      var button = "<button type=\"button\" data-indexNum=\"" + index + "\" class=\"list-group-item player-list-btn\">" + (index+1) + ". " + resultArray[index].object_title + "</button>";
-      switch (position) {
-          case "before":
-              $playerList.find("button:last").before(button);
-              break;
-          case "after":
-              $playerList.find("button:first").after(button);
-      }      
-      $(".player-list-btn[data-indexnum=" + index + "]").on('click', function(e){
-        console.log($(this)[0].dataset.indexnum);
-        objectIndex = parseInt($(this)[0].dataset.indexnum);
-        objectLoader();
-      });      
-    }
-
-    function printObjectList() {
-      var startTime = Date.now();
-      MAX_PLAYERLIST_COUNT = 15;
-      playerListHead = 0;
-      playerListRear = 0;
-      if (resultArray.length < MAX_PLAYERLIST_COUNT) {
-        playerListRear = resultArray.length - 1;
-      } else {
-        playerListRear = MAX_PLAYERLIST_COUNT-1;
-      }
-      //var playerListIndex = 0;
-      document.getElementById("playerList").innerHTML = "";
-      document.getElementById("playerList").innerHTML += "<button type=\"button\" data-direction=\"up\" class=\"player-list-control list-group-item\"><span class=\"glyphicon glyphicon-chevron-up\"></span></button>";
-      document.getElementById("playerList").innerHTML += "<button type=\"button\" data-direction=\"down\" class=\"player-list-control list-group-item\"><span class=\"glyphicon glyphicon-chevron-down\"></span></button>";
-      //$("#playerList").addClass("list-group");
-      var i = 0;
-      while (i >= playerListHead && i <= playerListRear) {
-          printObject(i, "before");
-          i++;
-      }
-      $("button[data-indexnum=" + 0 +"]").addClass("active");
-      var EndTime = endTime = Date.now();
-      console.log("Print time elapsed:" + (endTime - startTime));
-      //console.log(resultArray);
-      // document.getElementById("playerList").innerHTML += "<button type=\"button\" class=\"player-list-control list-group-item\"><span class=\"glyphicon glyphicon-chevron-down\"></span></button>";
-      $(".player-list-btn").on('click', function(e){
-        console.log($(this)[0].dataset.indexnum);
-        objectIndex = parseInt($(this)[0].dataset.indexnum);
-        objectLoader();
-      //   //console.log("Player list button clicked");
-      //   //console.log(objectId);
-      });
-      $(".player-list-control").on('click', function(e){
-        if ($(this)[0].dataset.direction === "down") {
-          $("button[data-indexnum=" + playerListHead +"]").remove();
-          if (playerListHead + 1 === resultArray.length) {
-              playerListHead = 0;
-          }
-            else {
-              playerListHead++;
-          }
-          if (playerListRear + 1 === resultArray.length) {
-              playerListRear = 0;
-          }
-            else {
-              playerListRear++;
-          }
-          printObject(playerListRear, "before");
-          updateObjectList()
-          //incrementObjectIndex();
-          //objectLoader();
-        }
-        else if ($(this)[0].dataset.direction === "up") {
-          $("button[data-indexnum=" + playerListRear +"]").remove();
-            if (playerListHead === 0) {
-                playerListHead = resultArray.length - 1;
-              }
-              else {
-                playerListHead--;
-            }
-            if (playerListRear === 0) {
-                playerListRear = resultArray.length - 1;
-              }
-              else {
-                playerListRear--;
-            }
-            console.log(playerListHead)
-            printObject(playerListHead,"after");
-            updateObjectList()
-            //decrementObjectIndex();
-            //objectLoader();
-        }
-      });
-    }
-
-    function updateObjectList() {
-      $(".player-list-btn").removeClass("active");
-      $("button[data-indexnum=" + objectIndex +"]").addClass("active");
-    }
-
-
-    //BUTTON BINDINGS
+//BUTTON BINDINGS
+///////////////////////////////////////////////////
     $('#videoBtn').on('click', function(e){
         shuffleOne("video").done(function(result) {
           player.loadVideoById(result);
@@ -362,29 +404,29 @@ function space() {
 
     $('#playerForm').on('submit', function(e){
         $("#playerButtons").removeClass("buttonContainer").addClass("hide");
-        e.preventDefault();        
+        e.preventDefault();
         console.log($(this).serializeArray())
         var formArray = $(this).serializeArray();
         var query = {
-          tableName: formArray[0]['value']
+          tableName: formArray[0]['value'],
+          published: formArray[1]['value']
         };
         var showArray = []
-        for (var i = 1; i < formArray.length; i++) {
+        for (var i = 2; i < formArray.length; i++) {
             if (formArray[i]['name'] === 'show')
               showArray.push(formArray[i]['value']);
         }
         query["show"] = JSON.stringify(showArray);
         console.log(query);
         returnQuery(query).done(function(result) {
+          //console.log(result);
           var resultString = result.split("xxx");
-          var resultArray = JSON.parse(resultString[resultString.length - 1]);
           console.log("POST: " + resultString[0]);
           console.log("$Shows: " + resultString[1]);
           console.log("Query:" + resultString[2]);
-          var objectIndex = 0;
-          //printObjectList();
-          //objectLoader();
-          mediaController.mediaArray = resultArray;
+          mediaController.mediaIndex = 0;
+          mediaController.mediaArray = JSON.parse(resultString[resultString.length - 1]);
+          mediaController.printMediaList();
           mediaController.mediaLoader();
         });
     });
