@@ -30,11 +30,16 @@ function space() {
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
     <link rel="stylesheet" href="bootstrap/css/bootstrap.css"></link>
     <style>
       .hide {
         display: none;
+      }
+
+      .cursor {
+        background-color: green;
       }
 
       .buttonContainer {
@@ -49,12 +54,25 @@ function space() {
         text-align: justify;
       }
 
+/*      @keyframes playlistEntries {
+        from{opacity: 0;}
+        to {opacity: 100;}
+      }   */  
+  
+
       .list-group-item {
         padding: 5px 10px !important;
+        animation-name: playlistEntries;
+        animation-duration: 3s;
       }
 
       button.list-group-item:hover {
         background-color: #ccc;
+      }
+
+      .player-list-control span{
+        text-align: center;
+        width: 100%;
       }
 
       #playerContainer {
@@ -65,6 +83,7 @@ function space() {
         display: block;
       }
 
+
     </style>
   </head>
   <body class="container-fluid">
@@ -72,30 +91,36 @@ function space() {
       <div id="player">        
       </div>
     </div>
-    <div id="playerList" class="col-md-3 pull-right">
+    <div id="playerList" class="col-md-3 pull-right list-group">
     </div>
     <div id="controls">
       <div id="playerButtons" class="buttonContainer">
-        <input id="videoBtn" type="submit" name="video" value="New video" />
-        <input id="playlistBtn" type="submit" name="playlist" value="New playlist" />
+        <input class="btn btn-primary" id="videoBtn" type="submit" name="video" value="New video" />
+        <input class="btn btn-primary" id="playlistBtn" type="submit" name="playlist" value="New playlist" />
       </div>
       <div id="videoButtons" class="hide">
-        <input id="nextVideoBtn" type="submit" name="nextVideo" value="Next video" />
-        <input id="prevVideoBtn" type="submit" name="prevVideo" value="Previous video" />
+        <input class="btn btn-primary" id="nextVideoBtn" type="submit" name="nextVideo" value="Next video" />
+        <input class="btn btn-primary" id="prevVideoBtn" type="submit" name="prevVideo" value="Previous video" />
       </div>
       <div id="playlistButtons" class="hide">
-        <input id="nextPlaylistBtn" type="submit" name="nextPlaylist" value="Next playlist" />
-        <input id="prevPlaylistBtn" type="submit" name="prevPlaylist" value="Previous playlist" />
+        <input class="btn btn-primary" id="nextPlaylistBtn" type="submit" name="nextPlaylist" value="Next playlist" />
+        <input class="btn btn-primary" id="prevPlaylistBtn" type="submit" name="prevPlaylist" value="Previous playlist" />
       </div>
       ||
-      <input id="makeBig" type="submit" name="makeBig" value="MAKE BIG" />
+      <input class="btn btn-primary" id="makeBig" type="submit" name="makeBig" value="MAKE BIG" />
+      ||
+      <input class="btn btn-primary" id="objectTest" type="submit" name="objectTest" value="Object Test" />
     </div>
     <div>
       <h3>Options</h3>
       <form id="playerForm" action="ajax.php" method="POST">
-        <input type="radio" name="table" value="video">Video<br>
-        <input type="radio" checked="checked" name="table" value="playlist">Playlist<br>
+        <input type="radio" name="table" checked="checked" value="video">Video<br>
+        <input type="radio" name="table" value="playlist">Playlist<br>
         <input type="radio" name="table" value="both">Both<br>
+        <hr>
+        <input type="radio" name="published" value="both" checked="checked">Both<br>
+        <input type="radio" name="published" value="jon-era">Jon Era<br>
+        <input type="radio" name="published" value="dan-era">Dan Era<br>
         <hr>
         <input type="checkbox" name="show" value="all">All<br>
         <input type="checkbox" name="show" value="gamegrumps">Game Grumps<br>
@@ -104,58 +129,244 @@ function space() {
         <input type="checkbox" name="show" value="gamegrumpsvs">Game Grumps VS<br>        
         <input type="checkbox" name="show" value="steamrolled">Steam Rolled<br>
         <input type="checkbox" name="show" value="tableflip">Table Flip<br>
-        <input type="checkbox" name="show" value="animated">Animated<br>
-        <input id="submit" type="submit" name="submit" value="Submit">
+        <input type="checkbox" name="show" value="animated">Animated<br>        
+
+        <input class="btn btn-primary" id="submit" type="submit" name="submit" value="Submit">
       </form>
     </div>
 
 
 <script>
-    // 2. This code loads the IFrame Player API code asynchronously.
-    var tag = document.createElement('script');
+    "use strict";
 
-    tag.src = "https://www.youtube.com/iframe_api";
-    var firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    function MediaController() {
+      this.mediaArray;
+      this.mediaIndex = 0;
+      this.player;
+      this.playlistIndex = 0;
+      this.playerListController = {
+        playerListHead: 0,
+        playerListRear: 0,
+        playerListCursor: 0,
+        MAX_PLAYERLIST_COUNT: 15
+      };
+    }
 
-    // 3. This function creates an <iframe> (and YouTube player)
-    //    after the API code downloads.
+    MediaController.prototype.mediaLoader = function() {
+          console.log("Media controller mediaLoader()");
+          this.updateMediaList();
+          if (this.mediaArray[this.mediaIndex].object_type === "video") {
+              console.log("Media controller video loaded");
+              $("#playlistButtons").removeClass("buttonContainer").addClass("hide");
+              $("#videoButtons").addClass("buttonContainer").removeClass("hide");
+              this.player.loadVideoById(this.mediaArray[this.mediaIndex].object_id);
+              //console.log(this);
+              function onPlayerStateChange(mediaController) {
+                  return function(event) {
+                      if(event.data === 0) {
+                          console.log("Woo!");
+                          mediaController.incMediaIndex();
+                          mediaController.mediaLoader();
+                      }
+                  }
+              }
+              this.player.addEventListener('onStateChange', onPlayerStateChange(this));
+          } 
+          else if (this.mediaArray[this.mediaIndex].object_type === "playlist") {
+              console.log("Media controller playlist loaded");
+              $("#videoButtons").removeClass("buttonContainer").addClass("hide");
+              $("#playlistButtons").addClass("buttonContainer").removeClass("hide");
+              this.player.loadPlaylist({
+                list: this.mediaArray[this.mediaIndex].object_id,
+                listType: "playlist"
+              });
+              function onPlayerStateChange(mediaController) {
+                  return function(event) {
+                    if(event.data === 1 || event.data === -1) {
+                      console.log("Playlist video cued")
+                      mediaController.playlistIndex = mediaController.player.getPlaylistIndex();
+                    }
+                    if(event.data === 0 && mediaController.playlistIndex === mediaController.player.getPlaylist().length - 1) {
+                      console.log("Load the next media object");
+                      mediaController.playlistIndex = 0;
+                      mediaController.incMediaIndex();
+                      mediaController.mediaLoader();
+                    }
+                  }
+              }
+              this.player.addEventListener('onStateChange', onPlayerStateChange(this));
+          }
+      }
+
+      MediaController.prototype.printMediaObject = function(index, position) {
+          console.log("MediaController printMediaObject()");
+          console.log(mediaController);
+          console.log(index);
+          var $playerList = $("#playerList");
+          var button = "<button type=\"button\" data-indexNum=\"" + index + "\" class=\"list-group-item player-list-btn\">" + (index) + ". " + mediaController.mediaArray[index].object_title + "</button>";
+          switch (position) {
+              case "before":
+                  $playerList.find("button:last").before(button);
+                  break;
+              case "after":
+                  $playerList.find("button:first").after(button);
+          }      
+          $(".player-list-btn[data-indexnum=" + index + "]").on('click', function(e){
+            console.log($(this)[0].dataset.indexnum);
+            mediaController.mediaIndex = parseInt($(this)[0].dataset.indexnum);
+            mediaController.mediaLoader();
+          });
+      }
+
+      MediaController.prototype.updateMediaList = function() {
+          console.log("MediaController updateMediaList()");
+          $(".player-list-btn").removeClass("active");
+          $("button[data-indexnum=" + this.mediaIndex +"]").addClass("active");
+      }
+
+      MediaController.prototype.moveCursor = function(direction) {
+          switch(direction) {
+            case "up":
+                if (mediaController.playerListController.playerListCursor === 0) {
+                    mediaController.playerListController.playerListCursor = mediaController.mediaArray.length - 1;
+                  }
+                  else {
+                    mediaController.playerListController.playerListCursor--;
+                }
+              break;
+            case "down":
+                if (mediaController.playerListController.playerListCursor + 1 === mediaController.mediaArray.length) {
+                    mediaController.playerListController.playerListCursor = 0;
+                }
+                  else {
+                    mediaController.playerListController.playerListCursor++;
+                }
+              break;
+          }
+          $(".player-list-btn").removeClass("cursor");
+          $("button[data-indexnum=" + this.playerListController.playerListCursor +"]").addClass("cursor");
+      }
+
+      MediaController.prototype.printMediaList = function() {
+          console.log("MediaController printMediaList()");
+          if (this.mediaArray.length < this.playerListController.MAX_PLAYERLIST_COUNT) {
+            this.playerListController.playerListRear = this.mediaArray.length - 1;
+          } else {
+            this.playerListController.playerListRear = this.playerListController.MAX_PLAYERLIST_COUNT - 1;
+          }
+          document.getElementById("playerList").innerHTML = "";
+          document.getElementById("playerList").innerHTML += "<button type=\"button\" data-direction=\"up\" class=\"player-list-control list-group-item\"><span class=\"glyphicon glyphicon-chevron-up\"></span></button>";
+          document.getElementById("playerList").innerHTML += "<button type=\"button\" data-direction=\"down\" class=\"player-list-control list-group-item\"><span class=\"glyphicon glyphicon-chevron-down\"></span></button>";
+          var i = 0;
+          console.log(this.playerListController);
+          while (i >= this.playerListController.playerListHead && i <= this.playerListController.playerListRear) {
+              this.printMediaObject(i, "before");
+              i++;
+          }
+          $("button[data-indexnum=" + 0 +"]").addClass("active");
+          // document.getElementById("playerList").innerHTML += "<button type=\"button\" class=\"player-list-control list-group-item\"><span class=\"glyphicon glyphicon-chevron-down\"></span></button>";
+          $(".player-list-btn").on('click', function(e){
+            console.log($(this)[0].dataset.indexnum);
+            this.mediaIndex = parseInt($(this)[0].dataset.indexnum);
+            mediaController.mediaLoader();
+          });
+          $(".player-list-control").on('click', function(e){
+            console.log("Before::  Head: " + mediaController.playerListController.playerListHead +
+            " Cursor: " + mediaController.playerListController.playerListCursor + 
+            " Rear: " + mediaController.playerListController.playerListRear);
+            if ($(this)[0].dataset.direction === "down") {
+                if (mediaController.playerListController.playerListCursor === mediaController.playerListController.playerListRear) {   
+                    $("button[data-indexnum=" + mediaController.playerListController.playerListHead +"]").remove();                 
+                    if (mediaController.playerListController.playerListHead + 1 === mediaController.mediaArray.length) {
+                        mediaController.playerListController.playerListHead = 0;
+                    }
+                      else {
+                        mediaController.playerListController.playerListHead++;
+                    }
+                    if (mediaController.playerListController.playerListRear + 1 === mediaController.mediaArray.length) {
+                        mediaController.playerListController.playerListRear = 0;
+                    }
+                      else {
+                        mediaController.playerListController.playerListRear++;
+                    }                            
+                    mediaController.printMediaObject(mediaController.playerListController.playerListRear, "before");
+                }
+                mediaController.moveCursor("down");
+                //mediaController.updateMediaList();
+                //mediaController.incMediaIndex();
+                //mediaController.mediaLoader();
+            }
+            else if ($(this)[0].dataset.direction === "up") {
+                if (mediaController.playerListController.playerListCursor === mediaController.playerListController.playerListHead) {
+                    $("button[data-indexnum=" + mediaController.playerListController.playerListRear +"]").remove();
+                    if (mediaController.playerListController.playerListHead === 0) {
+                        mediaController.playerListController.playerListHead = mediaController.mediaArray.length - 1;
+                      }
+                      else {
+                        mediaController.playerListController.playerListHead--;
+                    }
+                    if (mediaController.playerListController.playerListRear === 0) {
+                        mediaController.playerListController.playerListRear = mediaController.mediaArray.length - 1;
+                      }
+                      else {
+                        mediaController.playerListController.playerListRear--;
+                    }
+                    mediaController.printMediaObject(mediaController.playerListController.playerListHead,"after");
+                }
+                mediaController.moveCursor("up");
+                // mediaController.updateMediaList();
+                // mediaController.decMediaIndex();
+                // mediaController.mediaLoader();
+            }
+            console.log("After::  Head: " + mediaController.playerListController.playerListHead +
+            " Cursor: " + mediaController.playerListController.playerListCursor + 
+            " Rear: " + mediaController.playerListController.playerListRear);
+          });
+      }
+
+      MediaController.prototype.incMediaIndex = function() {
+        if (this.mediaIndex + 1 === this.mediaArray.length) {
+          this.mediaIndex = 0;
+        }
+        else {
+          this.mediaIndex++;
+        }
+      }
+
+      MediaController.prototype.decMediaIndex = function() {
+        if (this.mediaIndex === 0) {
+          this.mediaIndex = this.mediaArray.length - 1;
+        }
+        else {
+          this.mediaIndex--;
+        }
+      }
+
+//////////////////////////////////////////////////
+
+    var mediaController = new MediaController();
     var player;
-    var initialVideo;
-
-    shuffleOne("video").done(function(result) {
-        initialVideo = result;
-    });
+    const MAX_PLAYERLIST_COUNT = 15;
 
     function onYouTubeIframeAPIReady() {
-      player = new YT.Player('player', {
-        height: '390',
-        width: '640',
-        videoId: initialVideo,
-        events: {
-          'onReady': onPlayerReady
-          // 'onStateChange': onPlayerStateChange
-        }
+      var initialVideo;
+      shuffleOne("video").done(function(result) {
+          initialVideo = result;      
+          player = new YT.Player('player', {
+            height: '390',
+            width: '640',
+            videoId: initialVideo,
+            events: {
+              'onReady': onPlayerReady
+            }
+          });
       });
+      mediaController.player = player;
     }
 
-    // player.addEventListener("onStateChange", "onPlayerStateChange");
-    // player.removeEventListener("onStateChange", "onPlayerStateChange");
-    
-  // 4. The API will call this function when the video player is ready.
-    function onPlayerReady(event) {
-      // event.target.playVideo();
-      player.addEventListener("onStateChange", "onPlayerStateChange");      
+    function onPlayerReady(event) {   
       console.log("Player loaded");
-    }
-
-    // 5. The API calls this function when the player's state changes.
-    function onPlayerStateChange(event) {
-      if (event.data == YT.PlayerState.ENDED) {
-        console.log("Alas! I have ended!");
-        //shuffleOne("video");
-        //player.playVideo();
-      }
+      mediaController.player = player;
     }
 
     function shuffleOne(tableName) {
@@ -170,75 +381,12 @@ function space() {
           return $.ajax({
           url: 'ajax.php',
           type: 'POST',
-          data: {'getList': 'true', 'table': query["tableName"], 'show': query["show"]}            
+          data: {'getList': 'true', 'table': query["tableName"], 'published': query['published'], 'show': query["show"]}            
         });  
     }
 
-    function printObjectList() {
-      document.getElementById("playerList").innerHTML = "";
-      $("#playerList").addClass("list-group");
-      document.getElementById("playerList").innerHTML += "<button type=\"button\" data-indexnum=\"0" + "\" class=\"list-group-item active player-list-btn\">" + 1 + ". " + resultArray[0]["object_title"] + "</button>";
-      for (var i = 1; i < resultArray.length; i++) {
-          document.getElementById("playerList").innerHTML += "<button type=\"button\" data-indexNum=\"" + i + "\" class=\"list-group-item player-list-btn\">" + (i+1) + ". " + resultArray[i]["object_title"] + "</button>";
-      }
-      console.log(resultArray);
-      $(".player-list-btn").on('click', function(e){
-        console.log($(this)[0].dataset.indexnum);
-        objectIndex = parseInt($(this)[0].dataset.indexnum);
-        objectLoader();
-        //console.log("Player list button clicked");
-        //console.log(objectId);
-      })
-    }
-
-    function updateObjectList() {
-      $(".player-list-btn").removeClass("active");
-      $("button[data-indexnum=" + objectIndex +"]").addClass("active");
-    }
-
-   function objectLoader() {
-        console.log("Object loader | ObjectIndex: " + objectIndex);
-        updateObjectList();
-        if (resultArray[objectIndex]["object_type"] === "playlist") {
-            $("#videoButtons").removeClass("buttonContainer").addClass("hide");
-            $("#playlistButtons").addClass("buttonContainer").removeClass("hide");
-            console.log("Loading a playlist object");
-            console.log(resultArray[objectIndex]["object_id"]);
-            player.loadPlaylist({
-              list: resultArray[objectIndex]["object_id"],
-              listType: "playlist"
-            });
-            playlistLength = resultArray[objectIndex]["object_id"];
-            playlistIndex = 0;
-            onPlayerStateChange = function(event) {
-                if(event.data === 1 || event.data === -1) {
-                  console.log("Video cued")
-                  playlistIndex = player.getPlaylistIndex();
-                }
-                if(event.data === 0 && playlistIndex === player.getPlaylist().length - 1) {
-                  console.log("Load the next object");
-                  playlistIndex = 0;
-                  objectIndex += 1;
-                  objectLoader();
-                }
-            }
-        } else if (resultArray[objectIndex]["object_type"] === "video") {
-              $("#playlistButtons").removeClass("buttonContainer").addClass("hide");
-              $("#videoButtons").addClass("buttonContainer").removeClass("hide");
-              console.log("Loading a video object");
-              player.loadVideoById(resultArray[objectIndex]["object_id"]);
-              onPlayerStateChange = function(event) {
-                  if(event.data === 0) {
-                      console.log("Load the next object");
-                      playlistIndex = 0;
-                      objectIndex += 1;
-                      objectLoader();
-                  }              
-              }
-        }
-    }
-
-    //BUTTON BINDINGS
+//BUTTON BINDINGS
+///////////////////////////////////////////////////
     $('#videoBtn').on('click', function(e){
         shuffleOne("video").done(function(result) {
           player.loadVideoById(result);
@@ -256,14 +404,15 @@ function space() {
 
     $('#playerForm').on('submit', function(e){
         $("#playerButtons").removeClass("buttonContainer").addClass("hide");
-        e.preventDefault();        
+        e.preventDefault();
         console.log($(this).serializeArray())
         var formArray = $(this).serializeArray();
         var query = {
-          tableName: formArray[0]['value']
+          tableName: formArray[0]['value'],
+          published: formArray[1]['value']
         };
         var showArray = []
-        for (var i = 1; i < formArray.length; i++) {
+        for (var i = 2; i < formArray.length; i++) {
             if (formArray[i]['name'] === 'show')
               showArray.push(formArray[i]['value']);
         }
@@ -271,40 +420,62 @@ function space() {
         console.log(query);
         returnQuery(query).done(function(result) {
           //console.log(result);
-          resultString = result.split("xxx");
-          resultArray = JSON.parse(resultString[resultString.length - 1]);
+          var resultString = result.split("xxx");
           console.log("POST: " + resultString[0]);
           console.log("$Shows: " + resultString[1]);
           console.log("Query:" + resultString[2]);
-          objectIndex = 0;
-          printObjectList();
-          objectLoader();
+          mediaController.mediaIndex = 0;
+          mediaController.mediaArray = JSON.parse(resultString[resultString.length - 1]);
+          mediaController.printMediaList();
+          mediaController.mediaLoader();
         });
     });
 
     $('#nextVideoBtn').on('click', function(e){
-        objectIndex += 1;
-        objectLoader();
+        mediaController.incMediaIndex();
+        mediaController.mediaLoader();
     });
 
     $('#prevVideoBtn').on('click', function(e){
-        objectIndex -= 1;
-        objectLoader();
+        mediaController.decMediaIndex();
+        mediaController.mediaLoader();
     });
 
     $('#nextPlaylistBtn').on('click', function(e){
-        objectIndex += 1;
-        objectLoader();
+        mediaController.incMediaIndex();
+        mediaController.mediaLoader();
     });
 
     $('#prevPlaylistBtn').on('click', function(e){
-        objectIndex -= 1;
-        objectLoader();
+        mediaController.decMediaIndex();
+        mediaController.mediaLoader();
     });
 
     $('#makeBig').on('click', function(e){
         player.setSize(1280, 720);
     });
+
+    $('#objectTest').on('click', function(e){
+        shuffleOne("video").done(function(result) {
+          mediaController.player.loadVideoById(result);
+        });
+    });
+
+
+    //Event listener debugger
+    //(function () {
+    //     var ael = Node.prototype.addEventListener,
+    //         rel = Node.prototype.removeEventListener;
+    //     Node.prototype.addEventListener = function (a, b, c) {
+    //         console.log('Listener', 'added', this, a, b, c);
+    //         ael.apply(this, arguments);
+    //     };
+    //     Node.prototype.removeEventListener = function (a, b, c) {
+    //         console.log('Listener', 'removed', this, a, b, c);
+    //         rel.apply(this, arguments);
+    //     };
+    // }(
+    //));
 </script>
   </body>
 </html>

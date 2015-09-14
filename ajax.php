@@ -29,8 +29,10 @@ if (isset($_POST['getList'])) {
     echo("xxx");
     $table = $_POST['table'];
     $shows = json_decode($_POST['show']);
+    $published = $_POST['published'];
     print_r($shows);
     echo("xxx");
+    define("JON_ERA", "'2013-06-25T14:28:05.000Z'");    
     $query = "SELECT ";
     $query2 = "";
     $where = "";
@@ -53,8 +55,8 @@ if (isset($_POST['getList'])) {
         $firstShow = true;
         foreach($shows as $show) {
             if($firstShow) {
-                $query .= " WHERE";
-                $query2 .= " WHERE";         
+                $query .= " WHERE (";
+                $query2 .= " WHERE (";         
             } else {
                 $query .= " OR";
                 $query2 .= " OR";
@@ -95,9 +97,23 @@ if (isset($_POST['getList'])) {
             }
             $firstShow = false;
         }
-        $query .= " AND object_title IS NOT 'One-Offs'";
-        $query2 .= " AND object_title IS NOT 'One-Offs'";
+        $query .= " AND object_title IS NOT 'One-Offs')";
+        $query2 .= " AND object_title IS NOT 'One-Offs')";
 
+    }
+    switch($published) {
+        case 'jon-era':
+            $query .= " AND published_date < " . JON_ERA;
+            $query2 .= " AND published_date < " . JON_ERA;
+            break;
+        case 'dan-era':
+            $query .= " AND published_date > " . JON_ERA;
+            $query2 .= " AND published_date > " . JON_ERA;
+            break;
+        case 'both':
+            break;
+        default:
+            break;
     }
     //echo($query);
     if ($table === "both") {
