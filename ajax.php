@@ -138,13 +138,4 @@ if (isset($_POST['getOne'])) {
 }
 
 
-// function select() {
-//     echo "The select function is called.";
-//     exit;
-// }
-
-// function insert() {
-//     echo "<p>The insert function is called.<p>";
-//     exit;
-// }
 ?>
