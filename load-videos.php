@@ -1,9 +1,11 @@
 <?php
-set_time_limit(0);
+ini_set('max_execution_time', 600);
 $channelName = "gamegrumps";
 $MY_KEY = "AIzaSyCg1GMcq_tVjSsiykZH6xTU0ZDlTOWjkV8";
 $MAX_RESULTS = 50;
 $startTime = microtime(true);
+
+echo("Start loading videos.");
 
 $request = 'https://www.googleapis.com/youtube/v3/channels?part=contentDetails&forUsername=' . $channelName . '&key='. $MY_KEY;
 $channel = json_decode(file_get_contents($request), true);
@@ -26,7 +28,7 @@ while ($nextPageToken != "") {
     $uploads = array_merge($uploads, $uploadsResults["items"]);
 }
 
-//echo(sizeof($uploads));
+echo(sizeof($uploads));
 
 function getShow($title) { 
     $titleArray = explode("- ", $title);
@@ -50,6 +52,9 @@ function getShow($title) {
             break;
         case strpos($titleStart,"Animated") !== false || strpos($titleStart,"Animation") !== false:
             return "Animated";
+            break;
+        case strpos($titleEnd,"Table Flip NEW EPISODE on Sling!") !== false:
+            return "Other";
             break;
         case strpos($titleEnd,"Table Flip") !== false:
             return $titleEnd;
@@ -85,17 +90,27 @@ catch(PDOException $e) {
 $query = "DROP TABLE IF EXISTS video";
 $dbh->exec($query);
 
-$query = "CREATE TABLE IF NOT EXISTS video(video_id TEXT, title TEXT, published_date DATE, show TEXT)";
+$query = "CREATE TABLE `video` (
+	`video_id`	TEXT,
+	`playlist_id`	TEXT,
+	`title`	TEXT,
+	`published_date`	DATE,
+	`show`	TEXT,
+	FOREIGN KEY(playlist_id) REFERENCES playlist (playlist_id)
+    )";
 $dbh->exec($query);
 
+$dbh->beginTransaction();
 foreach ($videosFormatted as $video=>$array) {
     $video_id = $dbh->quote($array[0]);
     $title = $dbh->quote($array[1]);
     $published_date = $dbh->quote($array[2]);
     $show = $dbh->quote($array[3]);
     $query = "INSERT INTO video (video_id, title, published_date, show) VALUES ($video_id, $title, $published_date, $show)";
-    $dbh->exec($query);
+    $dbh->query($query);
 }
+
+$dbh->commit();
 
 $randInt = mt_rand(1, 50);
 $query = "SELECT video_id FROM video WHERE rowid = '$randInt'";
