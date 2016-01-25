@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <meta name="viewport" content="initial-scale-1">
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.css">
+    <style>
+        .container {
+            overflow: scroll-y;
+            padding: 0;
+            width: 1066px;
+        }
+
+        .hide {
+        display: none;
+        }
+
+        .buttonContainer {
+        display: inline-block;
+        }
+
+        #controls {
+            clear: both;
+        }
+
+        li.list-group-item {
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: justify;
+        }
+
+        .list-group-item {
+        padding: 5px 10px !important;
+        animation-name: playlistEntries;
+        animation-duration: 3s;
+        }
+
+        li.list-group-item:hover {
+        background-color: #ccc;
+        }
+
+        .player-list-control span{
+        text-align: center;
+        width: 100%;
+        }
+
+        #playerContainer {
+        display: inline-block;
+        float: left;
+        margin-bottom: 20px;
+        }
+
+        #controls {
+        display: block;
+        }
+
+        #playerList {
+            max-width: 100%;
+            max-height: 400px;
+            overflow-y: scroll;
+            font-size: 0.8em;
+            padding-left: 0;
+        }
+
+        #playerList li:hover{
+            cursor: pointer;
+            background-color: aqua;
+        }
+
+        .list-group {
+            margin-bottom: 0;
+        }
+
+        #player-list-btn {
+            /*Stuff*/
+        }
+
+        #playerListContainer {
+            float: right;
+            width: 39%;
+        }
+
+        #control-panel {
+            width: 50%;
+            float: left;
+        }
+
+    </style>
+  </head>
+  <body class="container">
+    <div id="playerContainer">
+      <div id="player">
+      </div>
+    </div>
+    <div id="playerListContainer" class="list-group">
+        <ul id="playerList">
+        </ul>
+    </div>
+    <div id="control-panel">
+       <div id="controls">
+          <div id="playerButtons" class="buttonContainer">
+            <button class="btn btn-primary" id="videoBtn" type="submit" name="video" value="New video">New video</button>
+            <button class="btn btn-primary" id="playlistBtn" type="submit" name="playlist" value="New playlist">New playlist</button>
+          </div>
+          <div id="videoButtons" class="hide">
+            <button class="btn btn-primary" id="prevVideoBtn" type="submit" name="prevVideo" value="Prev"><span class="glyphicon glyphicon-chevron-left"></span> Prev</button>
+            <button class="btn btn-primary" id="nextVideoBtn" type="submit" name="nextVideo" value="Next">Next <span class="glyphicon glyphicon-chevron-right"></span></button>
+          </div>
+          <div id="playlistButtons" class="hide">
+            <button class="btn btn-warning" id="prevPlaylistBtn" type="submit" name="prevPlaylist" value="Prev"><span class="glyphicon glyphicon-chevron-left"></span> Prev</button>
+            <button class="btn btn-warning" id="nextPlaylistBtn" type="submit" name="nextPlaylist" value="Next">Next <span class="glyphicon glyphicon-chevron-right"></span></button>
+          </div>
+          ||
+          <button class="btn btn-primary" id="makeBig" type="submit" name="makeBig" value="MAKE BIG">Make big</button>
+           <button class="btn btn-primary" id="makeSmall" type="submit" name="makeSmall" value="MAKE SMALL">Make small</button>
+        </div>
+        <div id="options">
+          <h3>Options</h3>
+          <form id="playerForm" action="ajax.php" method="POST">
+            <input type="radio" name="table" checked="checked" value="video">Video<br>
+            <input type="radio" name="table" value="playlist">Playlist<br>
+            <input type="radio" name="table" value="both">Both<br>
+            <hr>
+            <input type="radio" name="published" value="both" checked="checked">Both<br>
+            <input type="radio" name="published" value="jon-era">Jon Era<br>
+            <input type="radio" name="published" value="dan-era">Dan Era<br>
+            <hr>
+            <input type="checkbox" name="show" value="all">All<br>
+            <input type="checkbox" name="show" value="gamegrumps">Game Grumps<br>
+            <input type="checkbox" name="show" value="steamtrain">Steam Train<br>
+            <input type="checkbox" checked="checked" name="show" value="grumpcade">GrumpCade<br>
+            <input type="checkbox" name="show" value="gamegrumpsvs">Game Grumps VS<br>
+            <input type="checkbox" name="show" value="steamrolled">Steam Rolled<br>
+            <input type="checkbox" name="show" value="tableflip">Table Flip<br>
+            <input type="checkbox" name="show" value="animated">Animated<br>
+
+            <input class="btn btn-primary" id="submit" type="submit" name="submit" value="Submit">
+          </form>
+        </div>
+    </div>
+
+
+    <script src="MediaController.js"></script>
+    <script src="randomgrump.js"></script>      
+  </body>
+</html>
