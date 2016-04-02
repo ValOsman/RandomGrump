@@ -1,7 +1,7 @@
 <?php
 
 try {
-    $dbh = new PDO("sqlite:randomgrumps.db");
+    $dbh = new PDO("sqlite:../db/randomgrumps.db");
 }
 catch(PDOException $e) {
     echo $e->getMessage();

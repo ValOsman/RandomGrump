@@ -66,7 +66,7 @@ MediaController.prototype.mediaLoader = function () {
 
 MediaController.prototype.printMediaObject = function(index, startPos) {
     var playerList = $("#playerList");
-    var listItem = "<li data-indexNum=\"" + index + "\" class=\"list-group-item player-list-btn\">" + (index) + ". " + this.mediaArray[index].object_title + "</li>";
+    var listItem = "<li data-indexNum=\"" + index + "\" class=\"list-group-item player-list-btn\">" + (index+1) + ". " + this.mediaArray[index].object_title + "</li>";
     var loadBtn = "<li id=\"player-list-loader\" data-direction=\"loadMore\" class=\"list-group-item\">Load more</li>";
     playerList.append(listItem);
     if ((index == this.playerListController.rear) && (index != this.mediaArray.length - 1)) {
@@ -120,7 +120,7 @@ MediaController.prototype.printMediaList = function() {
     $("li[data-indexnum=" + this.playerListController.active + "]").addClass("active");
     $(".player-list-btn").on('click', function(e) {
         var btnNum = e.currentTarget.dataset.indexnum;
-        console.log(btnNum);
+        //console.log(btnNum);
         this.mediaIndex = parseInt(btnNum);
         this.mediaLoader();
     }.bind(this));

@@ -1,14 +1,14 @@
 <?php
 set_time_limit(0);
 $channelName = "gamegrumps";
-$MY_KEY = "AIzaSyCg1GMcq_tVjSsiykZH6xTU0ZDlTOWjkV8";
+require_once('yt-key.php');
 $MAX_RESULTS = 50;
-$startTime = microtime(true);
+$vipStartTime = microtime(true);
 
-echo("Starting.");
+echo("Started loading videos into playlists... <br>");
 
 try {
-    $dbh = new PDO("sqlite:randomgrumps.db");
+    $dbh = new PDO("sqlite:../db/randomgrumps.db");
 }
 catch(PDOException $e) {
     echo $e->getMessage();
@@ -21,7 +21,7 @@ $playlistIds = $stmt->fetchAll();
 $playlists = array();
 
 foreach($playlistIds as $playlistId) {
-    $request = 'https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=' . $playlistId[0] . '&maxResults=' . $MAX_RESULTS . '&key='. $MY_KEY;
+    $request = 'https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=' . $playlistId[0] . '&maxResults=' . $MAX_RESULTS . '&key='. MY_KEY;
     $playlistsResults = json_decode(file_get_contents($request), true);
     $items = $playlistsResults["items"];
     $videoIds = array();
@@ -34,7 +34,7 @@ foreach($playlistIds as $playlistId) {
     if (array_key_exists("nextPageToken",$playlistsResults)) {
         $nextPageToken = $playlistsResults["nextPageToken"];
         while($nextPageToken != "") {
-            $request = 'https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=' . $playlistId[0] . '&pageToken=' . $nextPageToken .  '&maxResults=' . $MAX_RESULTS . '&key='. $MY_KEY;
+            $request = 'https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=' . $playlistId[0] . '&pageToken=' . $nextPageToken .  '&maxResults=' . $MAX_RESULTS . '&key='. MY_KEY;
             $playlistsResults = json_decode(file_get_contents($request), true);
             $items = $playlistsResults["items"];
             $videoIds = array();
@@ -50,18 +50,18 @@ foreach($playlistIds as $playlistId) {
             }
         }     
     }
-    echo($playlistId["title"] . " | ");
+    //echo($playlistId["title"] . " | ");
     //print_r($playlists["$playlist_id"]);
 }
 
-$endTime = microtime(true);
-echo("<br><br> HTTPS querying over: " . date("i:s",$endTime-$startTime));
+$vipEndTime = microtime(true);
+echo("HTTPS querying over: " . date("i:s",$vipEndTime-$vipStartTime) . "<br>");
 
 //print_r($playlists);
 $dbh->beginTransaction();
 foreach($playlists as $playlistId=>$playlist) {
     foreach($playlist as $video) {
-        $insert = "UPDATE video SET playlist_id = (?) WHERE video_id = (?)";
+        $insert = "UPDATE OR IGNORE video SET playlist_id = (?) WHERE video_id = (?)";
         $stmt = $dbh->prepare($insert);
         $stmt->bindParam(1, $playlistId);
         $stmt->bindParam(2, $video);
@@ -72,6 +72,6 @@ $dbh->commit();
 
 
 
-$endTime = microtime(true);
-echo("<br><br> Runtime: " . date("i:s",$endTime-$startTime));
+$vipEndTime = microtime(true);
+echo("Finished loading videos into playlists. Runtime: " . date("i:s",$vipEndTime-$vipStartTime) . "<br>");
 ?>
