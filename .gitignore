@@ -1,5 +1,17 @@
+.*
+
 *.db
+
+*.db-journal
 
 misc/**
 
 bootstrap/**
+
+**/bootstrap/**
+
+assets/img/**
+
+favicon.ico
+
+assets/php/yt-key.php

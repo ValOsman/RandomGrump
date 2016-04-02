@@ -2,27 +2,52 @@
 
 var mc = new MediaController();
 var player;
+function aspectRatio(newWidth) {
+    var width = 16;
+    var height = 9;
+    
+    var newHeight = Math.ceil((height/width) * newWidth);    
+    
+    return {
+        'width': newWidth,
+        'height': newHeight
+    }
+}
 
+var target = document.querySelector('[id="playerContainer"]');
+var config = { childList: true, subtree: true}; 
+
+var observer = new MutationObserver(function(mutations) {
+    console.log(mutations);
+    if (mutations.length < 1) {
+        console.log("Player failed to load.");
+        loadYouTubePlayer();
+    }
+    observer.disconnect();
+});
+
+observer.observe(target, config);
+    
 function onYouTubeIframeAPIReady() {
-    var initialVideo;
-    shuffleOne("video").done(function(result) {
-        initialVideo = result;
-        player = new YT.Player('player', {
-            height: '390',
-            width: '640',
-            videoId: initialVideo,
-            events: {
-                'onReady': onPlayerReady
-            }
-        });
-    });
-    mc.player = player;
+    loadYouTubePlayer();
 }
 
 function onPlayerReady(event) {
-    console.log("Player loaded");
-    mc.player = player;
-    console.log(mc.player);
+    shuffleOne("video").done(function(result) {
+        mc.player.cueVideoById(result);
+    });
+}
+
+function loadYouTubePlayer() {
+    player = new YT.Player('player', {
+        height: 0,
+        width: 0,
+        events: {
+            'onReady': onPlayerReady
+        }
+    });
+    mc.player = player; 
+    resizePlayer();
 }
 
 //function onPlayerStateChange(event) {
@@ -31,7 +56,7 @@ function onPlayerReady(event) {
 
 function shuffleOne(tableName) {
     return $.ajax({
-        url: 'ajax.php',
+        url: 'assets/php/ajax.php',
         type: 'post',
         data: {
             'getOne': 'true',
@@ -42,7 +67,7 @@ function shuffleOne(tableName) {
 
 function returnQuery(query) {
     return $.ajax({
-        url: 'ajax.php',
+        url: 'assets/php/ajax.php',
         type: 'POST',
         data: {
             'getList': 'true',
@@ -51,6 +76,14 @@ function returnQuery(query) {
             'show': query["show"]
         }
     });
+}
+
+function resizePlayer() {
+    var container = $('.outer-container');
+    var containerPadding = container.outerWidth() - container.width();
+    var containerWidth = container.outerWidth() - containerPadding;
+    var size = aspectRatio(containerWidth);
+    mc.player.setSize(size.width, size.height);
 }
 
 //BUTTON BINDINGS
@@ -72,6 +105,7 @@ $('#playlistBtn').on('click', function(e) {
 
 $('#playerForm').on('submit', function(e) {
     $("#playerButtons").removeClass("buttonContainer").addClass("hide");
+    $("#playerListContainer").removeClass("hide");
     e.preventDefault();
     console.log("////////////////SUBMIT////////////////")
     var formArray = $(this).serializeArray();
@@ -131,6 +165,9 @@ $("input[name=show]").click(function(e) {
     }
 });
 
+$(window).resize(function(e) {
+    resizePlayer();
+});
 
 
 //Event listener debugger
@@ -148,3 +185,4 @@ $("input[name=show]").click(function(e) {
  }(
 )
 );*/
+

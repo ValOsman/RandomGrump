@@ -2,14 +2,24 @@
 <html>
   <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-    <meta name="viewport" content="initial-scale-1">
+    <meta name="viewport" content="initial-scale=1">
     <script src="https://www.youtube.com/iframe_api"></script>
-    <link rel="stylesheet" href="bootstrap/css/bootstrap.css">
+    <title>Random Grump - Watch</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.css">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
     <style>
+        
+        body {
+            background-color: #F9A205;
+            background-image: url("assets/img/shattered.png");
+            background-blend-mode: multiply;
+        }
+        
         .container {
-            overflow: scroll-y;
+            display: flex;
+            flex-direction: column;
             padding: 0;
-            width: 1066px;
         }
 
         .hide {
@@ -23,6 +33,12 @@
         #controls {
             clear: both;
         }
+        
+        .btn {
+            padding: 10px 15px;
+            border-radius: 2px;
+            font-size: 16px;
+        }
 
         li.list-group-item {
         width: 100%;
@@ -33,13 +49,17 @@
         }
 
         .list-group-item {
-        padding: 5px 10px !important;
         animation-name: playlistEntries;
         animation-duration: 3s;
         }
 
         li.list-group-item:hover {
         background-color: #ccc;
+        }
+        
+        .list-group-item:first-child {
+            border-top-left-radius: 2px;
+            border-top-right-radius: 2px;
         }
 
         .player-list-control span{
@@ -48,26 +68,26 @@
         }
 
         #playerContainer {
-        display: inline-block;
-        float: left;
-        margin-bottom: 20px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         #controls {
-        display: block;
+            display: block;
         }
 
         #playerList {
             max-width: 100%;
             max-height: 400px;
             overflow-y: scroll;
-            font-size: 0.8em;
+            font-size: 1em;
             padding-left: 0;
         }
 
         #playerList li:hover{
             cursor: pointer;
-            background-color: aqua;
+            background-color: #6eb1f6;
+            color: #fff;
         }
 
         .list-group {
@@ -80,70 +100,279 @@
 
         #playerListContainer {
             float: right;
-            width: 39%;
+            width: 45%;
         }
 
         #control-panel {
-            width: 50%;
+            width: 45%;
             float: left;
         }
+        
+        .outer-container {
+            background-color: #fff;
+            padding: 0 10px 30px;
+            box-shadow: 0px 0px 19px 1px #111;
+        }
+        
+        @media (max-width: 1000px) {
+            #menu {
+                display: flex;
+                flex-direction: column-reverse;
+            }
+            
+            #control-panel, #playerListContainer {
+                width: 100%;
+            }
+                    
+            #form-body {
+                display: flex;
+            }
+            
+            fieldset {
+                border-bottom: 1px solid rgba(100,100,100,0.3);
+                margin-bottom: 5px;
+                margin-left: 5px;
+                max-height: 40%;
+                display: flex;
+                flex-wrap: wrap;
+                flex-direction: column;
+            }
+        }
+        
+        @media (max-width: 767px) {
+            .outer-container {
+                padding-left: 0;
+                padding-right: 0;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .outer-container {
+                width: 98%;
+            }
+        }
+        
+        @media (min-width: 922px) {
+            .outer-container {
+                width: 98%;
+            }
+        }
+        
+        @media (min-width: 1200px) {
+            .outer-continaer, .container {
+                width: 1066px;
+            }
+        }        
 
+        .inner-container {
+            width: 100%;
+        }
+        
+        #playerForm {
+            padding-left: 10px;
+        }
+        
+        fieldset {
+            border-bottom: 1px solid rgba(100,100,100,0.3);
+            margin-bottom: 5px;
+            margin-left: 5px;
+        }
+        
+        .radio, .checkbox {
+            margin-top: 4px;
+            margin-bottom: 4px;
+        }
+        
+        label {
+            width: 100%;
+        }
+        
+        header{ 
+            display: flex;
+            background-color: #333;
+        }
+                
+        #header-nav {
+            background-color: #333;
+            overflow: hidden;
+            width: 100%;
+        }
+        
+        #header-nav ul {
+            display: inline-block;
+            padding: 0;
+            margin: 0;
+        }
+        
+        #header-nav ul li {
+            display: inline-flex;
+            align-content: center;
+            justify-content: center;
+            margin-right:5px;
+        }
+        
+        #header-nav ul li:hover {
+            background-color: #888;
+        }
+        
+        #header-nav ul li > a {
+            text-decoration: none;
+            font-weight: bold;
+            color: #eee;
+            padding: 15px 10px;
+        }
+        
+        #logo {
+            height: 50px;
+            width: 50px;
+            margin: 0 5px;
+        }
+        
+        #menu {
+            margin: 0 5px;
+        }
+        
     </style>
   </head>
-  <body class="container">
-    <div id="playerContainer">
-      <div id="player">
-      </div>
-    </div>
-    <div id="playerListContainer" class="list-group">
-        <ul id="playerList">
-        </ul>
-    </div>
-    <div id="control-panel">
-       <div id="controls">
-          <div id="playerButtons" class="buttonContainer">
-            <button class="btn btn-primary" id="videoBtn" type="submit" name="video" value="New video">New video</button>
-            <button class="btn btn-primary" id="playlistBtn" type="submit" name="playlist" value="New playlist">New playlist</button>
-          </div>
-          <div id="videoButtons" class="hide">
-            <button class="btn btn-primary" id="prevVideoBtn" type="submit" name="prevVideo" value="Prev"><span class="glyphicon glyphicon-chevron-left"></span> Prev</button>
-            <button class="btn btn-primary" id="nextVideoBtn" type="submit" name="nextVideo" value="Next">Next <span class="glyphicon glyphicon-chevron-right"></span></button>
-          </div>
-          <div id="playlistButtons" class="hide">
-            <button class="btn btn-warning" id="prevPlaylistBtn" type="submit" name="prevPlaylist" value="Prev"><span class="glyphicon glyphicon-chevron-left"></span> Prev</button>
-            <button class="btn btn-warning" id="nextPlaylistBtn" type="submit" name="nextPlaylist" value="Next">Next <span class="glyphicon glyphicon-chevron-right"></span></button>
-          </div>
-          ||
-          <button class="btn btn-primary" id="makeBig" type="submit" name="makeBig" value="MAKE BIG">Make big</button>
-           <button class="btn btn-primary" id="makeSmall" type="submit" name="makeSmall" value="MAKE SMALL">Make small</button>
+<body>
+    <header>
+        <a href="."><img id="logo" src="assets/img/rg-logo.png"></a>
+        <nav id="header-nav">           
+            <ul>
+                <li><a href=".">Home</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Donate</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main class="outer-container container">
+        <div id="playerContainer">
+                <div id="player">
+                </div>
+                <div id="controls">
+                    <div id="playerButtons" class="buttonContainer">
+                        <button class="btn btn-primary" id="videoBtn" type="submit" name="video" value="New video">New video</button>
+                        <button class="btn btn-primary" id="playlistBtn" type="submit" name="playlist" value="New playlist">New playlist</button>
+                    </div>
+                    <div id="videoButtons" class="hide">
+                        <button class="btn btn-primary" id="prevVideoBtn" type="submit" name="prevVideo" value="Prev"><span class="glyphicon glyphicon-chevron-left"></span> Prev</button>
+                        <button class="btn btn-primary" id="nextVideoBtn" type="submit" name="nextVideo" value="Next">Next <span class="glyphicon glyphicon-chevron-right"></span></button>
+                    </div>
+                    <div id="playlistButtons" class="hide">
+                        <button class="btn btn-warning" id="prevPlaylistBtn" type="submit" name="prevPlaylist" value="Prev"><span class="glyphicon glyphicon-chevron-left"></span> Prev</button>
+                        <button class="btn btn-warning" id="nextPlaylistBtn" type="submit" name="nextPlaylist" value="Next">Next <span class="glyphicon glyphicon-chevron-right"></span></button>
+                    </div>
+                    <!--||
+                    <button class="btn btn-primary" id="makeBig" type="submit" name="makeBig" value="MAKE BIG">Make big</button>
+                    <button class="btn btn-primary" id="makeSmall" type="submit" name="makeSmall" value="MAKE SMALL">Make small</button>-->
+                </div>
+            </div>
+        <div class="inner-container container">
+            
+            <div id="menu">
+                <div id="playerListContainer" class="list-group hide">
+                    <h3>Playlist</h3>
+                    <ul id="playerList">
+                    </ul>
+                </div>
+                <div id="control-panel">
+                    <div id="options">
+                        <h3>Options</h3>
+                        <form id="playerForm" action="assets/php/ajax.php" method="POST">
+                            <div id="form-body">
+                                <fieldset>
+                                    <h4>Type</h4>
+                                    <div class="radio">
+                                        <label for="video">
+                                        <input type="radio" name="table" checked="checked" value="video"> Video
+                                        </label>
+                                    </div>
+                                    <div class="radio">
+                                        <label for="playlist">
+                                        <input type="radio" name="table" value="playlist"> Playlist
+                                        </label>
+                                    </div>
+                                    <div class="radio">
+                                        <label>
+                                        <input type="radio" name="table" value="both"> Both
+                                        </label>
+                                    </div>
+                                </fieldset>
+
+                                <fieldset>
+                                    <h4>Era</h4>
+                                    <div class="radio">
+                                        <label>
+                                        <input type="radio" name="published" value="jon-era"> Jon Era
+                                        </label>
+                                    </div>
+                                    <div class="radio">
+                                        <label>
+                                        <input type="radio" name="published" value="dan-era"> Dan Era
+                                         </label>
+                                    </div>
+                                    <div class="radio">
+                                        <label>
+                                        <input type="radio" name="published" value="both" checked="checked"> Both
+                                         </label>
+                                    </div>
+                                </fieldset>
+                                <fieldset>
+                                <h4>Show</h4>
+                                <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" checked="checked"  name="show" value="all">All
+                                </label>
+                                </div>
+                                <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="show" value="gamegrumps">Game Grumps
+                                </label>
+                                </div>
+                                <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="show" value="steamtrain">Steam Train
+                                </label>
+                                </div>
+                                <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="show" value="grumpcade">GrumpCade
+                                </label>
+                                </div>
+                                <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="show" value="gamegrumpsvs">Game Grumps VS
+                                </label>
+                                </div>
+                                <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="show" value="steamrolled">Steam Rolled
+                                </label>
+                                </div>
+                                <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="show" value="tableflip">Table Flip
+                                </label>
+                                </div>
+                                <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="show" value="animated">Animated
+                                </label>
+                                </div>
+                                </fieldset>
+                            </div>
+
+                            <input class="btn btn-primary" id="submit" type="submit" name="submit" value="Grump!">
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div id="options">
-          <h3>Options</h3>
-          <form id="playerForm" action="ajax.php" method="POST">
-            <input type="radio" name="table" checked="checked" value="video">Video<br>
-            <input type="radio" name="table" value="playlist">Playlist<br>
-            <input type="radio" name="table" value="both">Both<br>
-            <hr>
-            <input type="radio" name="published" value="both" checked="checked">Both<br>
-            <input type="radio" name="published" value="jon-era">Jon Era<br>
-            <input type="radio" name="published" value="dan-era">Dan Era<br>
-            <hr>
-            <input type="checkbox" name="show" value="all">All<br>
-            <input type="checkbox" name="show" value="gamegrumps">Game Grumps<br>
-            <input type="checkbox" name="show" value="steamtrain">Steam Train<br>
-            <input type="checkbox" checked="checked" name="show" value="grumpcade">GrumpCade<br>
-            <input type="checkbox" name="show" value="gamegrumpsvs">Game Grumps VS<br>
-            <input type="checkbox" name="show" value="steamrolled">Steam Rolled<br>
-            <input type="checkbox" name="show" value="tableflip">Table Flip<br>
-            <input type="checkbox" name="show" value="animated">Animated<br>
-
-            <input class="btn btn-primary" id="submit" type="submit" name="submit" value="Submit">
-          </form>
-        </div>
-    </div>
+    </main>
 
 
-    <script src="MediaController.js"></script>
-    <script src="randomgrump.js"></script>      
-  </body>
+    <script src="assets/js/mediacontroller.js"></script>
+    <script src="assets/js/randomgrump.js"></script>
+</body>
+
 </html>

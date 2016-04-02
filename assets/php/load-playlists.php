@@ -1,26 +1,28 @@
 <?php
 ini_set('max_execution_time', 300);
 $channelName = "gamegrumps";
-$MY_KEY = "AIzaSyCg1GMcq_tVjSsiykZH6xTU0ZDlTOWjkV8";
+require_once('yt-key.php');
 $MAX_RESULTS = 50;
-$startTime = microtime(true);
+$playlistStartTime = microtime(true);
 
-$request = 'https://www.googleapis.com/youtube/v3/channels?part=contentDetails&forUsername=' . $channelName . '&key='. $MY_KEY;
+echo("Started loading playlists... <br>");
+
+$request = 'https://www.googleapis.com/youtube/v3/channels?part=contentDetails&forUsername=' . $channelName . '&key='. MY_KEY;
 $channel = json_decode(file_get_contents($request), true);
 $channelId = $channel["items"][0]["id"];
 $uploadsId = $channel["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"];
 //print_r($uploadsId);
 //echo($request);
-echo("<br><br>");
-$request = 'https://www.googleapis.com/youtube/v3/playlists?part=contentDetails,snippet&channelId=' . $channelId . '&maxResults=' . $MAX_RESULTS . '&key='. $MY_KEY;
+//echo("<br><br>");
+$request = 'https://www.googleapis.com/youtube/v3/playlists?part=contentDetails,snippet&channelId=' . $channelId . '&maxResults=' . $MAX_RESULTS . '&key='. MY_KEY;
 $playlistsResults = json_decode(file_get_contents($request), true);
 $nextPageToken = $playlistsResults["nextPageToken"];
 $playlists = $playlistsResults["items"];
 //print_r($playlists[0]);
 //echo($request);
-echo("<br><br>");
+//echo("<br><br>");
 while ($nextPageToken != "") {
-    $request = 'https://www.googleapis.com/youtube/v3/playlists?part=contentDetails,snippet&channelId=' . $channelId . '&maxResults=' . $MAX_RESULTS . '&pageToken='. $nextPageToken . '&key='. $MY_KEY;
+    $request = 'https://www.googleapis.com/youtube/v3/playlists?part=contentDetails,snippet&channelId=' . $channelId . '&maxResults=' . $MAX_RESULTS . '&pageToken='. $nextPageToken . '&key='. MY_KEY;
     $playlistsResults = json_decode(file_get_contents($request), true);
     if (array_key_exists("nextPageToken",$playlistsResults)) {
       $nextPageToken = $playlistsResults["nextPageToken"];
@@ -40,7 +42,7 @@ for ($i = 0; $i < sizeof($playlists); $i++) {
 }
 
 try {
-    $dbh = new PDO("sqlite:randomgrumps.db");
+    $dbh = new PDO("sqlite:../db/randomgrumps.db");
 }
 catch(PDOException $e) {
     echo $e->getMessage();
@@ -49,13 +51,14 @@ catch(PDOException $e) {
 $query = "DROP TABLE IF EXISTS playlist";
 $dbh->exec($query);
 
-$query = "CREATE TABLE `playlist` (
-	`playlist_id`	TEXT,
+$query = "CREATE TABLE IF NOT EXISTS `playlist` (
+	`playlist_id`	TEXT UNIQUE,
 	`title`	TEXT,
 	`published_date`	DATE,
 	`episodes`	INT
     )";
 $dbh->exec($query);
+
 
 $dbh->beginTransaction();
 foreach ($playlistsFormatted as $playlist=>$array) {
@@ -63,13 +66,13 @@ foreach ($playlistsFormatted as $playlist=>$array) {
     $title = $dbh->quote($array[1]);
     $published_date = $dbh->quote($array[2]);
     $episodes = $dbh->quote($array[3]);
-    $query = "INSERT INTO playlist (playlist_id, title, published_date, episodes) VALUES ($playlist_id, $title, $published_date, $episodes)";
+    $query = "INSERT OR IGNORE INTO playlist (playlist_id, title, published_date, episodes) VALUES ($playlist_id, $title, $published_date, $episodes)";
     $dbh->query($query);
 }
 
 $dbh->commit();
 
-$endTime = microtime(true);
-echo("<br><br> Runtime: " . date("i:s",$endTime-$startTime));
+$playlistEndTime = microtime(true);
+echo("Finished loading playlists. Runtime: " . date("i:s",$playlistEndTime-$playlistStartTime) . "<br>");
 
 ?>
