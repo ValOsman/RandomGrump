@@ -12,7 +12,7 @@ function space() {
 }
 
 function getOneEntry($tableName, $dbh) {
-    $query = "SELECT count(*) FROM $tableName";
+    $query = "SELECT count(*) FROM $tableName WHERE show != 'Other'";
     $stmt = $dbh->query($query);
     $stmt->execute();
     $numRows = $stmt->fetch()[0];
@@ -25,29 +25,37 @@ function getOneEntry($tableName, $dbh) {
 }
 
 if (isset($_POST['getList'])) {
-    print_r($_POST);
-    echo("xxx");
+    //print_r($_POST);
+    //echo("xxx");
     $table = $_POST['table'];
     $shows = json_decode($_POST['show']);
     $published = $_POST['published'];
-    print_r($shows);
-    echo("xxx");
-    define("JON_ERA", "'2013-06-25T14:28:05.000Z'");    
+    $oneOffs = false;
+    if (!empty($_POST['oneOffs'])) {
+        $oneOffs = $_POST['oneOffs'];
+    }
+    //print_r($shows);
+    //echo("xxx");
+    define("JON_ERA", "'2013-06-25T17:45:02.000Z'");    
     $query = "SELECT ";
     $query2 = "";
-    $where = "";
     switch($table) {
         case 'video':
-            $query .= "video.video_id as object_id, video.title as object_title, 'video' as object_type FROM video";
+            $query .= "video.video_id as object_id, video.title as object_title, video.published_date as object_published_date, 'video' as object_type FROM video";
             break;
         case 'playlist':
-            $query .= "DISTINCT playlist.playlist_id as object_id, playlist.title as object_title, 'playlist' as object_type FROM playlist INNER JOIN video ON video.playlist_id = playlist.playlist_id";
+            $query .= "DISTINCT playlist.playlist_id as object_id, playlist.title as object_title, playlist.published_date as object_published_date, 'playlist' as object_type FROM playlist INNER JOIN video ON video.playlist_id = playlist.playlist_id";
             break;
         case 'both':
-            $query .= "video.video_id as object_id, video.title as object_title, 'video' as object_type FROM video";
-            $query2 .= "UNION ALL SELECT DISTINCT playlist.playlist_id, playlist.title as object_title, 'playlist' as object_type FROM playlist INNER JOIN video ON video.playlist_id = playlist.playlist_id";
+            $query .= "video.video_id as object_id, video.title as object_title, video.published_date as object_published_date, 'video' as object_type FROM video";
+            $query2 .= "UNION ALL SELECT DISTINCT playlist.playlist_id, playlist.title as object_title, playlist.published_date as object_published_date, 'playlist' as object_type FROM playlist INNER JOIN video ON video.playlist_id = playlist.playlist_id";
             break;
     }
+    
+    if ($oneOffs != false) {
+        $query .= " INNER JOIN playlist on video.playlist_id = playlist.playlist_id";
+    }
+    
     if($shows[0] == "all" || empty($shows)) {
         $query .= " WHERE video.show != 'Other'";
         $query2 .= " WHERE video.show != 'Other'";
@@ -55,8 +63,8 @@ if (isset($_POST['getList'])) {
         $firstShow = true;
         foreach($shows as $show) {
             if($firstShow) {
-                $query .= " WHERE (";
-                $query2 .= " WHERE (";         
+                $query .= " WHERE ";
+                $query2 .= " WHERE ";         
             } else {
                 $query .= " OR";
                 $query2 .= " OR";
@@ -96,19 +104,30 @@ if (isset($_POST['getList'])) {
                     break;
             }
             $firstShow = false;
-        }
-        $query .= " AND object_title IS NOT 'One-Offs')";
-        $query2 .= " AND object_title IS NOT 'One-Offs')";
+            
+            if (($table == "video" || $table == "both") && $oneOffs != false) {
+                if ($oneOffs == "exclude") {
+                    $query .= " AND playlist.title IS NOT 'One-Offs'";
+                } else if ($oneOffs == "only") {
+                    $query .= " AND playlist.title = 'One-Offs'";
+                }
 
+            }
+        }
     }
+    
+    //This ensures the entire One-Offs playlist is never returned.
+    $query .= " AND object_title IS NOT 'One-Offs' AND object_title IS NOT 'Uploads'";
+    $query2 .= " AND object_title IS NOT 'One-Offs' AND object_title IS NOT 'Uploads'";
+    
     switch($published) {
         case 'jon-era':
-            $query .= " AND published_date < " . JON_ERA;
-            $query2 .= " AND published_date < " . JON_ERA;
+            $query .= " AND object_published_date < " . JON_ERA;
+            $query2 .= " AND object_published_date < " . JON_ERA;
             break;
         case 'dan-era':
-            $query .= " AND published_date > " . JON_ERA;
-            $query2 .= " AND published_date > " . JON_ERA;
+            $query .= " AND object_published_date > " . JON_ERA;
+            $query2 .= " AND object_published_date > " . JON_ERA;
             break;
         case 'both':
             break;
@@ -116,14 +135,21 @@ if (isset($_POST['getList'])) {
             break;
     }
     //echo($query);
+    //echo("xxx");
     if ($table === "both") {
         $query = $query . $query2;
     }
+    
     $stmt = $dbh->prepare($query);
-    $stmt->execute();
-    $results = $stmt->fetchAll();
-    shuffle($results);
-    echo($query . "xxx" . json_encode($results));
+    if ($stmt != false) {
+        $stmt->execute();
+        $results = $stmt->fetchAll();
+        shuffle($results);
+        echo(json_encode($results));
+    } else {
+        echo('Database error');
+    }
+
 }
 
 if (isset($_POST['getOne'])) {

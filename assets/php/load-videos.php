@@ -1,16 +1,7 @@
 <?php
-ini_set('max_execution_time', 600);
-$channelName = "gamegrumps";
-require_once('yt-key.php');
-$MAX_RESULTS = 50;
 $videoStartTime = microtime(true);
 
 echo("Start loading videos... <br>");
-
-$request = 'https://www.googleapis.com/youtube/v3/channels?part=contentDetails&forUsername=' . $channelName . '&key='. MY_KEY;
-$channel = json_decode(file_get_contents($request), true);
-$channelId = $channel["items"][0]["id"];
-$uploadsId = $channel["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"];
 
 $request = 'https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&playlistId=' . $uploadsId . '&maxResults=' . $MAX_RESULTS . '&key=' . MY_KEY;
 //echo($request);
@@ -76,10 +67,6 @@ function getShow($title, $publishedAt) {
 
 
 for ($i = 0; $i < sizeof($uploads); $i++) {
-    //$request = 'https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=' . $uploads[$i]["id"] . '&maxResults=1&key=AIzaSyCg1GMcq_tVjSsiykZH6xTU0ZDlTOWjkV8';
-    //$series = json_decode(file_get_contents($request), true)["items"][0]["snippet"]["title"];
-    //$seriesArray= explode(" - ", $series);
-    //echo($series);
     $id = $uploads[$i]["contentDetails"]["videoId"];
     $snippet = $uploads[$i]["snippet"];
     $title = $snippet["title"];
@@ -95,7 +82,7 @@ try {
 }
 catch(PDOException $e) {
     echo $e->getMessage();
-}  
+} 
 
 $query = "DROP TABLE IF EXISTS video";
 $dbh->exec($query);
@@ -112,27 +99,18 @@ $dbh->exec($query);
 
 $dbh->beginTransaction();
 foreach ($videosFormatted as $video=>$array) {
-    $video_id = $dbh->quote($array[0]);
-    $title = $dbh->quote($array[1]);
-    $published_date = $dbh->quote($array[2]);
-    $show = $dbh->quote($array[3]);
-    $query = "INSERT INTO video (video_id, title, published_date, show) VALUES ($video_id, $title, $published_date, $show)";
-    $dbh->query($query);
+    $stmt = $dbh->prepare("INSERT INTO video (video_id, title, published_date, show) VALUES (:video_id, :title, :published_date, :show)");
+    $stmt->bindParam(':video_id', $array[0]);
+    $stmt->bindParam(':title', $array[1]);
+    $stmt->bindParam(':published_date', $array[2]);
+    $stmt->bindParam(':show', $array[3]);
+    $stmt->execute();
 }
 
 $dbh->commit();
 
-/*$randInt = mt_rand(1, 50);
-$query = "SELECT video_id FROM video WHERE rowid = '$randInt'";
-$stmt = $dbh->prepare($query);
-$stmt->execute();
-$randId = $stmt->fetch()[0];
-
-
-echo("Complete: " . $randId);*/
-
 $videoEndTime = microtime(true);
-echo("Finished loading videos. Runtime: " . date("i:s",$videoEndTime-$videoStartTime) . "<br");
+echo("Finished loading videos. Runtime: " . date("i:s",$videoEndTime-$videoStartTime) . "<br>");
 ?>
 
 

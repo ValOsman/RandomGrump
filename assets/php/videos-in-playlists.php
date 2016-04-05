@@ -1,8 +1,4 @@
 <?php
-set_time_limit(0);
-$channelName = "gamegrumps";
-require_once('yt-key.php');
-$MAX_RESULTS = 50;
 $vipStartTime = microtime(true);
 
 echo("Started loading videos into playlists... <br>");
@@ -14,12 +10,15 @@ catch(PDOException $e) {
     echo $e->getMessage();
 }
 
-$selectQuery = "SELECT playlist_id, title FROM playlist";
+$selectQuery = "SELECT playlist_id, title FROM playlist ORDER BY playlist_id DESC";
 $stmt = $dbh->prepare($selectQuery);
 $stmt->execute();
 $playlistIds = $stmt->fetchAll();
 $playlists = array();
+$dbh = null;
+$stmt = null;
 
+//Gets each video ID and associates it with a playlist ID.
 foreach($playlistIds as $playlistId) {
     $request = 'https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&playlistId=' . $playlistId[0] . '&maxResults=' . $MAX_RESULTS . '&key='. MY_KEY;
     $playlistsResults = json_decode(file_get_contents($request), true);
@@ -30,7 +29,7 @@ foreach($playlistIds as $playlistId) {
     }
     $playlist_id = $playlistId["playlist_id"];
     $playlists[$playlist_id] = $videoIds;
-    echo("<br><br>");
+
     if (array_key_exists("nextPageToken",$playlistsResults)) {
         $nextPageToken = $playlistsResults["nextPageToken"];
         while($nextPageToken != "") {
@@ -57,18 +56,39 @@ foreach($playlistIds as $playlistId) {
 $vipEndTime = microtime(true);
 echo("HTTPS querying over: " . date("i:s",$vipEndTime-$vipStartTime) . "<br>");
 
+
+try {
+    $dbh = new PDO("sqlite:../db/randomgrumps.db");
+}
+catch(PDOException $e) {
+    echo $e->getMessage();
+}
+
+$selectQuery = "SELECT * FROM video";
+$stmt = $dbh->prepare($selectQuery);
+$stmt->execute();
+print_r($stmt->fetch());
+echo("<br>");
+
 //print_r($playlists);
 $dbh->beginTransaction();
 foreach($playlists as $playlistId=>$playlist) {
+    //echo("playlist id: " . $playlistId . "<br>");
     foreach($playlist as $video) {
-        $insert = "UPDATE OR IGNORE video SET playlist_id = (?) WHERE video_id = (?)";
+        //echo("<br> video id: " . $video);
+        $insert = "UPDATE OR IGNORE video SET playlist_id = :playlistId WHERE video_id = :video";
         $stmt = $dbh->prepare($insert);
-        $stmt->bindParam(1, $playlistId);
-        $stmt->bindParam(2, $video);
+        $stmt->bindParam(':playlistId', $playlistId);
+        $stmt->bindParam(':video', $video);
         $stmt->execute();
     }
 }
 $dbh->commit();
+
+$selectQuery = "SELECT * FROM video";
+$stmt = $dbh->prepare($selectQuery);
+$stmt->execute();
+print_r($stmt->fetch());
 
 
 

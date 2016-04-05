@@ -7,6 +7,7 @@
     <title>Random Grump - Watch</title>
     <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.css">
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300,700' rel='stylesheet' type='text/css'>
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <style>
         
@@ -14,6 +15,7 @@
             background-color: #F9A205;
             background-image: url("assets/img/shattered.png");
             background-blend-mode: multiply;
+            font-family: 'Open Sans', sans-serif;
         }
         
         .container {
@@ -39,6 +41,16 @@
             border-radius: 2px;
             font-size: 16px;
         }
+        
+        .btn-primary {
+            background-color: #6EA5FF;
+            border-color: #538FFF;
+        }
+        
+        .btn-primary:hover {
+            background-color: #4278DC;
+            border-color: #214076;
+        }
 
         li.list-group-item {
         width: 100%;
@@ -46,6 +58,11 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         text-align: justify;
+        }
+        
+        li.list-group-item.active {
+            background-color: #4278DC;
+            border-color: #214076;
         }
 
         .list-group-item {
@@ -57,14 +74,15 @@
         background-color: #ccc;
         }
         
-        .list-group-item:first-child {
-            border-top-left-radius: 2px;
-            border-top-right-radius: 2px;
+        .list-group-item:first-child, .list-group-item:last-child {
+            border-top-left-radius: 0px;
+            border-top-right-radius: 0px;
+            border-top: 0px;
         }
 
         .player-list-control span{
-        text-align: center;
-        width: 100%;
+            text-align: center;
+            width: 100%;
         }
 
         #playerContainer {
@@ -82,6 +100,10 @@
             overflow-y: scroll;
             font-size: 1em;
             padding-left: 0;
+            border-style: solid;
+            border-width: 1px 0;
+            border-color: #ddd;
+            z-index: 1;
         }
 
         #playerList li:hover{
@@ -96,6 +118,43 @@
 
         #player-list-btn {
             /*Stuff*/
+        }
+        
+        div#sort { 
+            display: inline-block;
+            margin-right: 17px;
+            margin-bottom: -5px;
+            align-self: flex-end;
+            z-index: 0;
+        }
+        
+        .btn-sort {
+            font-size: 1em;
+            font-weight: 400;
+            padding: 7px;
+            min-width: 70px;
+            background-color: #fff;
+            color: #444;
+            border-color: #ddd;
+        }
+        
+        .btn-sort:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        
+        .btn-sort:active, .btn-sort:focus {
+            background-color: #ccc;
+            color: black;
+        }
+        
+        #playerListContainer h3 {
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
+        #player-list-loader {
+            font-weight: 600;
         }
 
         #playerListContainer {
@@ -172,6 +231,10 @@
             padding-left: 10px;
         }
         
+        #playerForm h4 {
+            margin-bottom: 5px;
+        }
+        
         fieldset {
             border-bottom: 1px solid rgba(100,100,100,0.3);
             margin-bottom: 5px;
@@ -223,6 +286,10 @@
         }
         
         #logo {
+            background-color: #333;
+        }
+        
+        #logo-img {
             height: 50px;
             width: 50px;
             margin: 0 5px;
@@ -232,11 +299,19 @@
             margin: 0 5px;
         }
         
+        #queue-column {
+            display: flex;
+            flex-direction: column;
+            align-content: flex-end;
+            justify-content: flex-end;
+            margin-top: -36px;
+        }
+        
     </style>
   </head>
 <body>
     <header>
-        <a href="."><img id="logo" src="assets/img/rg-logo.png"></a>
+        <a id="logo" href="."><img id="logo-img" src="assets/img/rg-logo.png"></a>
         <nav id="header-nav">           
             <ul>
                 <li><a href=".">Home</a></li>
@@ -264,20 +339,26 @@
                     </div>
                     <!--||
                     <button class="btn btn-primary" id="makeBig" type="submit" name="makeBig" value="MAKE BIG">Make big</button>
-                    <button class="btn btn-primary" id="makeSmall" type="submit" name="makeSmall" value="MAKE SMALL">Make small</button>-->
+                    <button class="btn btn-primary" id="makeSmall" type="submit" name="makeSmall" value="MAKE SMALL">Make small</button>-->                    
                 </div>
             </div>
         <div class="inner-container container">
             
             <div id="menu">
                 <div id="playerListContainer" class="list-group hide">
-                    <h3>Playlist</h3>
-                    <ul id="playerList">
-                    </ul>
+                    <h3>Queue</h3>
+                    <div id="queue-column">
+                        <div class="btn-group" id="sort">
+                            <button class="btn btn-primary btn-sort" id="shuffle" type="submit" name="shuffle" value="shuffle">Shuffle</button>
+                            <button class="btn btn-primary btn-sort" id="sort-asc" type="submit" name="sort-asc" value="sort-asc">Sort Asc</button>      <button class="btn btn-primary btn-sort" id="sort-desc" type="submit" name="sort-desc" value="sort-desc">Sort Desc</button>
+                        </div>
+                        <ul id="playerList">
+                        </ul>
+                    </div>           
                 </div>
                 <div id="control-panel">
                     <div id="options">
-                        <h3>Options</h3>
+                        <h3>Filters</h3>
                         <form id="playerForm" action="assets/php/ajax.php" method="POST">
                             <div id="form-body">
                                 <fieldset>
@@ -299,7 +380,7 @@
                                     </div>
                                 </fieldset>
 
-                                <fieldset>
+                                <fieldset id="era">
                                     <h4>Era</h4>
                                     <div class="radio">
                                         <label>
@@ -316,6 +397,24 @@
                                         <input type="radio" name="published" value="both" checked="checked"> Both
                                          </label>
                                     </div>
+                                </fieldset>
+                                <fieldset name="one-offs">
+                                <h4>One-offs</h4>
+                                <div class="radio">
+                                <label>
+                                    <input type="radio" checked="checked"  name="one-off" value="include">Inlcude one-offs
+                                </label>
+                                </div>
+                                <div class="radio">
+                                <label>
+                                    <input type="radio" name="one-off" value="exclude">Exclude one-offs
+                                </label>
+                                </div>
+                                <div class="radio">
+                                <label>
+                                    <input type="radio" name="one-off" value="only">Only one-offs
+                                </label>
+                                </div>
                                 </fieldset>
                                 <fieldset>
                                 <h4>Show</h4>

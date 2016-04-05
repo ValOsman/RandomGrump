@@ -74,7 +74,7 @@ MediaController.prototype.printMediaObject = function(index, startPos) {
         $("#player-list-loader").on('click', function(e) {
             $("#player-list-loader").remove();
             var elem = e.currentTarget;
-            var i = index;
+            var i = index+1;
             this.playerListController.head = this.playerListController.rear;
             this.playerListController.rear += this.playerListController.INCREMENT;
             while (i >= this.playerListController.head && i <= this.playerListController.rear) {

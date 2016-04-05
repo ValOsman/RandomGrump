@@ -1,7 +1,16 @@
 'use strict';
+//Sometimes, the Youtube Iframe API doesn't call its own onReady function, so the player never gets loaded. When this happens, this acts as a fallback.
+$(document).ready(function(){
+    try {
+       loadYouTubePlayer(); 
+    } catch (e) {
+        console.log("The YouTube Iframe API is really hit or miss.");
+    }
+});
 
 var mc = new MediaController();
 var player;
+
 function aspectRatio(newWidth) {
     var width = 16;
     var height = 9;
@@ -14,20 +23,6 @@ function aspectRatio(newWidth) {
     }
 }
 
-var target = document.querySelector('[id="playerContainer"]');
-var config = { childList: true, subtree: true}; 
-
-var observer = new MutationObserver(function(mutations) {
-    console.log(mutations);
-    if (mutations.length < 1) {
-        console.log("Player failed to load.");
-        loadYouTubePlayer();
-    }
-    observer.disconnect();
-});
-
-observer.observe(target, config);
-    
 function onYouTubeIframeAPIReady() {
     loadYouTubePlayer();
 }
@@ -46,13 +41,12 @@ function loadYouTubePlayer() {
             'onReady': onPlayerReady
         }
     });
-    mc.player = player; 
+    mc.player = player;
+    //I have to resize the player twice for some reason. The first time, the size of the outercontainer isn't calculated properly.  ¯\_(ツ)_/¯ 
+    resizePlayer();
     resizePlayer();
 }
 
-//function onPlayerStateChange(event) {
-//    console.log(mc.player.getPlayerState());
-//}
 
 function shuffleOne(tableName) {
     return $.ajax({
@@ -73,6 +67,7 @@ function returnQuery(query) {
             'getList': 'true',
             'table': query["tableName"],
             'published': query['published'],
+            'oneOffs': query['oneOffs'],
             'show': query["show"]
         }
     });
@@ -83,7 +78,31 @@ function resizePlayer() {
     var containerPadding = container.outerWidth() - container.width();
     var containerWidth = container.outerWidth() - containerPadding;
     var size = aspectRatio(containerWidth);
+    console.log([container.outerWidth(), containerPadding, containerWidth]);
     mc.player.setSize(size.width, size.height);
+}
+
+//http://stackoverflow.com/a/12646864
+function shuffle(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+    return array;
+}
+
+//http://stackoverflow.com/a/8175221
+function sortByKey(array, key, order) {
+    return array.sort(function(a, b) {
+        var x = a[key]; var y = b[key];
+        if (order == 'ASC') {
+            return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+        } else {
+            return ((x > y) ? -1 : ((x < y) ? 1 : 0));
+        }        
+    });
 }
 
 //BUTTON BINDINGS
@@ -108,23 +127,37 @@ $('#playerForm').on('submit', function(e) {
     $("#playerListContainer").removeClass("hide");
     e.preventDefault();
     console.log("////////////////SUBMIT////////////////")
+    console.log($(this).elements);
     var formArray = $(this).serializeArray();
+    console.log(formArray);
     var query = {
         tableName: formArray[0]['value'],
-        published: formArray[1]['value']
+        published: formArray[1]['value'],
     };
+    var showIndex = 2;
+    if (formArray[2]['name'] == "one-off") {
+       query["oneOffs"]  = formArray[2]['value'];
+        showIndex = 3;
+    }
     var showArray = []
-    for (var i = 2; i < formArray.length; i++) {
+    for (var i = showIndex; i < formArray.length; i++) {
         if (formArray[i]['name'] === 'show')
             showArray.push(formArray[i]['value']);
     }
     query["show"] = JSON.stringify(showArray);
+    console.log(query);
     returnQuery(query).done(function(result) {
-        var resultString = result.split("xxx");
-        mc.mediaIndex = 0;
-        mc.mediaArray = JSON.parse(resultString[resultString.length - 1]);
-        mc.printMediaList();
-        mc.mediaLoader();
+        console.log(result);
+        var resultArray = JSON.parse(result);
+        if (resultArray.length > 0) {
+            mc.mediaIndex = 0;
+            mc.mediaArray = resultArray;
+            console.log(mc.mediaArray);
+            mc.printMediaList();
+            mc.mediaLoader();
+        } else {
+            alert("Sorry, your query didn't return any results.");
+        }
     });
 });
 
@@ -163,6 +196,41 @@ $("input[name=show]").click(function(e) {
     } else if (this.value != "all") {
         $("input[value=all]").prop("checked", false);
     }
+});
+
+$("input[name=table]").click(function(e) {
+    if (this.value == "playlist") {
+      $("fieldset[name=one-offs]").prop("disabled", true);
+    } else {
+        $("fieldset[name=one-offs]").prop("disabled", false);
+    }    
+});
+
+$("#shuffle").click(function(e) {
+    console.log("Shuffle");
+    shuffle(mc.mediaArray) ;
+    mc.mediaIndex = 0;
+    console.log(mc.mediaArray);
+    mc.printMediaList();
+    mc.mediaLoader();
+});
+
+$("#sort-asc").click(function(e) {
+    console.log("Sort asc");
+    sortByKey(mc.mediaArray, 'object_published_date', 'ASC');
+    mc.mediaIndex = 0;
+    console.log(mc.mediaArray);
+    mc.printMediaList();
+    mc.mediaLoader();
+});
+
+$("#sort-desc").click(function(e) {
+    console.log("Sort desc");
+    sortByKey(mc.mediaArray, 'object_published_date', 'DESC');
+    mc.mediaIndex = 0;
+    console.log(mc.mediaArray);
+    mc.printMediaList();
+    mc.mediaLoader();;
 });
 
 $(window).resize(function(e) {
