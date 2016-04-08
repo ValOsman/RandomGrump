@@ -16,22 +16,22 @@ function MediaController() {
 }
 
 MediaController.prototype.mediaLoader = function () {
-    console.log("Media controller mediaLoader()");
-    console.log(this);
+    //console.log("Media controller mediaLoader()");
+    //console.log(this);
     this.updateActiveMedia();
     if (this.listenerAdded === false) {
-        console.log("Video listener added");
+        //console.log("Video listener added");
         this.listenerAdded = true;
         this.player.addEventListener('onStateChange', onPlayerStateChange(this));
     }
-    console.log(this.mediaArray[this.mediaIndex].object_title);
+    //console.log(this.mediaArray[this.mediaIndex].object_title);
     if (this.mediaArray[this.mediaIndex].object_type === "video") {
-        console.log("Media controller video loaded");
+        //console.log("Media controller video loaded");
         $("#playlistButtons").removeClass("buttonContainer").addClass("hide");
         $("#videoButtons").addClass("buttonContainer").removeClass("hide");
         this.player.loadVideoById(this.mediaArray[this.mediaIndex].object_id);
     } else if (this.mediaArray[this.mediaIndex].object_type === "playlist") {
-        console.log("Media controller playlist loaded");
+        //console.log("Media controller playlist loaded");
         $("#videoButtons").removeClass("buttonContainer").addClass("hide");
         $("#playlistButtons").addClass("buttonContainer").removeClass("hide");
         this.player.loadPlaylist({
@@ -44,18 +44,18 @@ MediaController.prototype.mediaLoader = function () {
         return function(event) {
             if (event.data === 0 &&
                 mc.mediaArray[mc.mediaIndex].object_type === "video") {
-                console.log("Video has ended.");
-                console.log(mc.player);
+                //console.log("Video has ended.");
+                //console.log(mc.player);
                 mc.incMediaIndex();
                 mc.mediaLoader();
             } else if (event.data === 1 &&
                 mc.mediaArray[mc.mediaIndex].object_type === "playlist") {
-                console.log("Playlist video playing")
+                //console.log("Playlist video playing")
                 mc.playlistIndex = mc.player.getPlaylistIndex();
-                console.log(mc.player.getPlaylist().length);
+                //console.log(mc.player.getPlaylist().length);
             } else if (event.data === 0 &&
                 mc.playlistIndex === mc.player.getPlaylist().length - 1) {
-                console.log("Playlist has ended");
+                //console.log("Playlist has ended");
                 mc.playlistIndex = 0;
                 mc.incMediaIndex();
                 mc.mediaLoader();
@@ -72,21 +72,13 @@ MediaController.prototype.printMediaObject = function(index, startPos) {
     if ((index == this.playerListController.rear) && (index != this.mediaArray.length - 1)) {
         playerList.append(loadBtn);
         $("#player-list-loader").on('click', function(e) {
-            $("#player-list-loader").remove();
-            var elem = e.currentTarget;
-            var i = index+1;
-            this.playerListController.head = this.playerListController.rear;
-            this.playerListController.rear += this.playerListController.INCREMENT;
-            while (i >= this.playerListController.head && i <= this.playerListController.rear) {
-                this.printMediaObject(i, this.playerListController.head);
-                i++;
-            }
+            this.loadMoreMedia(index);
         }.bind(this));
     }
 
     $(".player-list-btn[data-indexnum=" + index + "]").on('click', function(e) {
         var btnNum = parseInt(e.currentTarget.dataset.indexnum);
-        console.log(btnNum);
+        //console.log(btnNum);
         this.mediaIndex = btnNum;
         this.playerListController.cursor = btnNum;
         this.mediaLoader();
@@ -94,14 +86,27 @@ MediaController.prototype.printMediaObject = function(index, startPos) {
 }
 
 MediaController.prototype.updateActiveMedia = function() {
-    console.log("MediaController updateActiveMedia()");
+    //console.log("MediaController updateActiveMedia()");
     $(".player-list-btn").removeClass("active");
     this.playerListController.active = this.mediaIndex
     $("li[data-indexnum=" + this.mediaIndex + "]").addClass("active");
 }
 
+MediaController.prototype.loadMoreMedia = function(index) {
+    $("#player-list-loader").remove();
+    //var elem = e.currentTarget;
+    var i = index+1;
+    this.playerListController.head = this.playerListController.rear;
+    this.playerListController.rear += this.playerListController.INCREMENT;
+    while (i >= this.playerListController.head && i <= this.playerListController.rear) {
+        this.printMediaObject(i, mc.playerListController.head);
+        i++;
+    }
+    this.updateActiveMedia();
+}
+
 MediaController.prototype.printMediaList = function() {
-    console.log("MediaController printMediaList()");
+    //console.log("MediaController printMediaList()");
     //console.log(this);
     this.playerListController.head = 0;
     this.playerListController.cursor = 0;
@@ -131,6 +136,9 @@ MediaController.prototype.incMediaIndex = function() {
         this.mediaIndex = 0;
     } else {
         this.mediaIndex++;
+    }
+    if (this.mediaIndex > this.playerListController.rear) {
+        this.loadMoreMedia(this.mediaIndex - 1);
     }
 }
 

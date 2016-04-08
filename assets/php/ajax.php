@@ -11,8 +11,11 @@ function space() {
   echo ("<br><br>");
 }
 
-function getOneEntry($tableName, $dbh) {
-    $query = "SELECT count(*) FROM $tableName WHERE show != 'Other'";
+function getOneEntry($tableName, $dbh) {    
+    $query = "SELECT count(*) FROM $tableName";
+    if ($tableName == "video") {
+        $query .= " WHERE show != 'Other'";
+    }
     $stmt = $dbh->query($query);
     $stmt->execute();
     $numRows = $stmt->fetch()[0];
@@ -52,7 +55,7 @@ if (isset($_POST['getList'])) {
             break;
     }
     
-    if ($oneOffs != false) {
+    if ($oneOffs != false && $table != 'playlist') {
         $query .= " INNER JOIN playlist on video.playlist_id = playlist.playlist_id";
     }
     
@@ -139,6 +142,9 @@ if (isset($_POST['getList'])) {
     if ($table === "both") {
         $query = $query . $query2;
     }
+    
+    file_put_contents("querylog.txt", $query, FILE_APPEND);
+    file_put_contents("querylog.txt", "\n", FILE_APPEND);
     
     $stmt = $dbh->prepare($query);
     if ($stmt != false) {

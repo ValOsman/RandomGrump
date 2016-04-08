@@ -1,6 +1,9 @@
 <?php
     set_time_limit(0);
     $dbStartTime = microtime(true);
+    $runtime = date("h:i:sa") . "\n";
+    echo("Running at " . date("h:i:sa"));
+    file_put_contents("database-log.txt", $runtime, FILE_APPEND);
     echo("Started loading database... <br>");
     $channelName = "gamegrumps";
     $MAX_RESULTS = 50;
@@ -13,12 +16,6 @@
     $uploadsId = $channel["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"];
       
     require('load-videos.php');
-
-    $selectQuery = "SELECT * FROM video";
-    $stmt = $dbh->prepare($selectQuery);
-    $stmt->execute();
-    print_r($stmt->fetch());
-
     require('load-playlists.php');
     require('videos-in-playlists.php');
 
