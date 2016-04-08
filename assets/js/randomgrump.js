@@ -2,7 +2,7 @@
 //Sometimes, the Youtube Iframe API doesn't call its own onReady function, so the player never gets loaded. When this happens, this acts as a fallback.
 $(document).ready(function(){
     try {
-       loadYouTubePlayer(); 
+        loadYouTubePlayer();
     } catch (e) {
         console.log("The YouTube Iframe API is really hit or miss.");
     }
@@ -42,9 +42,7 @@ function loadYouTubePlayer() {
         }
     });
     mc.player = player;
-    //I have to resize the player twice for some reason. The first time, the size of the outercontainer isn't calculated properly.  ¯\_(ツ)_/¯ 
-    resizePlayer();
-    resizePlayer();
+    resizePlayer();    
 }
 
 
@@ -78,7 +76,7 @@ function resizePlayer() {
     var containerPadding = container.outerWidth() - container.width();
     var containerWidth = container.outerWidth() - containerPadding;
     var size = aspectRatio(containerWidth);
-    console.log([container.outerWidth(), containerPadding, containerWidth]);
+    //console.log([container.outerWidth(), containerPadding, containerWidth]);
     mc.player.setSize(size.width, size.height);
 }
 
@@ -122,19 +120,21 @@ $('#playlistBtn').on('click', function(e) {
     });
 });
 
-$('#playerForm').on('submit', function(e) {
-    $("#playerButtons").removeClass("buttonContainer").addClass("hide");
-    $("#playerListContainer").removeClass("hide");
+$('#playerForm').on('submit', function(e) {    
     e.preventDefault();
-    console.log("////////////////SUBMIT////////////////")
-    console.log($(this).elements);
+    //console.log("////////////////SUBMIT////////////////")
+    //console.log($(this).elements);
     var formArray = $(this).serializeArray();
-    console.log(formArray);
+    //console.log(formArray);
     var query = {
         tableName: formArray[0]['value'],
         published: formArray[1]['value'],
     };
-    var showIndex = 2;
+    if (formArray.length < 4) {
+        var oneOff = {name: "one-off", value: ''};
+        formArray.splice(2, 0, oneOff);
+    }
+    var showIndex = 3;
     if (formArray[2]['name'] == "one-off") {
        query["oneOffs"]  = formArray[2]['value'];
         showIndex = 3;
@@ -145,14 +145,16 @@ $('#playerForm').on('submit', function(e) {
             showArray.push(formArray[i]['value']);
     }
     query["show"] = JSON.stringify(showArray);
-    console.log(query);
+    //console.log(query);
     returnQuery(query).done(function(result) {
-        console.log(result);
+        //console.log(result);
         var resultArray = JSON.parse(result);
         if (resultArray.length > 0) {
+            $("#playerButtons").removeClass("buttonContainer").addClass("hide");
+            $("#playerListContainer").removeClass("hide");
             mc.mediaIndex = 0;
             mc.mediaArray = resultArray;
-            console.log(mc.mediaArray);
+            //console.log(mc.mediaArray);
             mc.printMediaList();
             mc.mediaLoader();
         } else {
@@ -207,28 +209,28 @@ $("input[name=table]").click(function(e) {
 });
 
 $("#shuffle").click(function(e) {
-    console.log("Shuffle");
+    //console.log("Shuffle");
     shuffle(mc.mediaArray) ;
     mc.mediaIndex = 0;
-    console.log(mc.mediaArray);
+    //console.log(mc.mediaArray);
     mc.printMediaList();
     mc.mediaLoader();
 });
 
 $("#sort-asc").click(function(e) {
-    console.log("Sort asc");
+    //console.log("Sort asc");
     sortByKey(mc.mediaArray, 'object_published_date', 'ASC');
     mc.mediaIndex = 0;
-    console.log(mc.mediaArray);
+    //console.log(mc.mediaArray);
     mc.printMediaList();
     mc.mediaLoader();
 });
 
 $("#sort-desc").click(function(e) {
-    console.log("Sort desc");
+    //console.log("Sort desc");
     sortByKey(mc.mediaArray, 'object_published_date', 'DESC');
     mc.mediaIndex = 0;
-    console.log(mc.mediaArray);
+    //console.log(mc.mediaArray);
     mc.printMediaList();
     mc.mediaLoader();;
 });

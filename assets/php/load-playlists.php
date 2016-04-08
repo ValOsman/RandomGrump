@@ -42,8 +42,8 @@ catch(PDOException $e) {
     echo $e->getMessage();
 }  
 
-$query = "DROP TABLE IF EXISTS playlist";
-$dbh->exec($query);
+/*$query = "DROP TABLE IF EXISTS playlist";
+$dbh->exec($query);*/
 
 $query = "CREATE TABLE IF NOT EXISTS `playlist` (
 	`playlist_id`	TEXT UNIQUE,

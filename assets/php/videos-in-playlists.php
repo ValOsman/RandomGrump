@@ -64,12 +64,6 @@ catch(PDOException $e) {
     echo $e->getMessage();
 }
 
-$selectQuery = "SELECT * FROM video";
-$stmt = $dbh->prepare($selectQuery);
-$stmt->execute();
-print_r($stmt->fetch());
-echo("<br>");
-
 //print_r($playlists);
 $dbh->beginTransaction();
 foreach($playlists as $playlistId=>$playlist) {
@@ -84,13 +78,6 @@ foreach($playlists as $playlistId=>$playlist) {
     }
 }
 $dbh->commit();
-
-$selectQuery = "SELECT * FROM video";
-$stmt = $dbh->prepare($selectQuery);
-$stmt->execute();
-print_r($stmt->fetch());
-
-
 
 $vipEndTime = microtime(true);
 echo("Finished loading videos into playlists. Runtime: " . date("i:s",$vipEndTime-$vipStartTime) . "<br>");

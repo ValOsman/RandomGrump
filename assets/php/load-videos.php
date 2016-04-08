@@ -3,6 +3,26 @@ $videoStartTime = microtime(true);
 
 echo("Start loading videos... <br>");
 
+try {
+    $dbh = new PDO("sqlite:../db/randomgrumps.db");
+}
+catch(PDOException $e) {
+    echo $e->getMessage();
+} 
+
+/*$query = "DROP TABLE IF EXISTS video";
+$dbh->exec($query);*/
+
+$query = "CREATE TABLE IF NOT EXISTS `video` (
+	`video_id`	TEXT UNIQUE,
+	`playlist_id`	TEXT,
+	`title`	TEXT,
+	`published_date`	DATE,
+	`show`	TEXT,
+	FOREIGN KEY(playlist_id) REFERENCES playlist (playlist_id)
+    )";
+$dbh->exec($query);
+
 $request = 'https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails,snippet&playlistId=' . $uploadsId . '&maxResults=' . $MAX_RESULTS . '&key=' . MY_KEY;
 //echo($request);
 $uploadsResults = json_decode(file_get_contents($request), true);
@@ -76,26 +96,6 @@ for ($i = 0; $i < sizeof($uploads); $i++) {
     //echo('<iframe width="560" height="315" src="https://www.youtube.com/embed/videoseries?list=' . $playlists[$i]["id"] . '" frameborder="0" allowfullscreen></iframe>');
 }
 
-
-try {
-    $dbh = new PDO("sqlite:../db/randomgrumps.db");
-}
-catch(PDOException $e) {
-    echo $e->getMessage();
-} 
-
-$query = "DROP TABLE IF EXISTS video";
-$dbh->exec($query);
-
-$query = "CREATE TABLE IF NOT EXISTS `video` (
-	`video_id`	TEXT UNIQUE,
-	`playlist_id`	TEXT,
-	`title`	TEXT,
-	`published_date`	DATE,
-	`show`	TEXT,
-	FOREIGN KEY(playlist_id) REFERENCES playlist (playlist_id)
-    )";
-$dbh->exec($query);
 
 $dbh->beginTransaction();
 foreach ($videosFormatted as $video=>$array) {
