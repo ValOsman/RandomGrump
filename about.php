@@ -19,7 +19,7 @@
   </head>
 <body>
 <?php include("header.php"); ?>
-    <main class="outer-container container">
+    <main id="about" class="outer-container container">
         <h1>RandomGrump and You</h1>
         <section>
             <h2>What is RandomGrump?</h2>

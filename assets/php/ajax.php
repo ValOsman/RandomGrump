@@ -62,6 +62,14 @@ if (isset($_POST['getList'])) {
     if($shows[0] == "all" || empty($shows)) {
         $query .= " WHERE video.show != 'Other'";
         $query2 .= " WHERE video.show != 'Other'";
+        if (($table == "video" || $table == "both") && $oneOffs != false) {
+            if ($oneOffs == "exclude") {
+                $query .= " AND playlist.title IS NOT 'One-Offs'";
+            } else if ($oneOffs == "only") {
+                $query .= " AND playlist.title = 'One-Offs'";
+            }
+
+        }
     } else {
         $firstShow = true;
         foreach($shows as $show) {
@@ -107,7 +115,6 @@ if (isset($_POST['getList'])) {
                     break;
             }
             $firstShow = false;
-            
             if (($table == "video" || $table == "both") && $oneOffs != false) {
                 if ($oneOffs == "exclude") {
                     $query .= " AND playlist.title IS NOT 'One-Offs'";

@@ -1,16 +1,6 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-    <meta name="viewport" content="initial-scale=1">
-    <script src="https://www.youtube.com/iframe_api"></script>
-    <title>Random Grump - Watch</title>
-    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.css">
-    <link rel="stylesheet" href="assets/css/randomgrump.css">
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300,700' rel='stylesheet' type='text/css'>
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-  </head>
+  <?php include("head.php"); ?>
 <body>
 <?php include("header.php"); ?>
     <main class="outer-container container">
@@ -29,10 +19,7 @@
                     <div id="playlistButtons" class="hide">
                         <button class="btn btn-warning" id="prevPlaylistBtn" type="submit" name="prevPlaylist" value="Prev"><span class="glyphicon glyphicon-chevron-left"></span> Prev</button>
                         <button class="btn btn-warning" id="nextPlaylistBtn" type="submit" name="nextPlaylist" value="Next">Next <span class="glyphicon glyphicon-chevron-right"></span></button>
-                    </div>
-                    <!--||
-                    <button class="btn btn-primary" id="makeBig" type="submit" name="makeBig" value="MAKE BIG">Make big</button>
-                    <button class="btn btn-primary" id="makeSmall" type="submit" name="makeSmall" value="MAKE SMALL">Make small</button>-->                    
+                    </div>                   
                 </div>
             </div>
         <div class="inner-container container">
@@ -95,7 +82,7 @@
                                 <h4>One-offs</h4>
                                 <div class="radio">
                                 <label>
-                                    <input type="radio" checked="checked"  name="one-off" value="include">Inlcude one-offs
+                                    <input type="radio" checked="checked"  name="one-off" value="include">Include one-offs
                                 </label>
                                 </div>
                                 <div class="radio">
