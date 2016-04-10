@@ -145,9 +145,9 @@ $('#playerForm').on('submit', function(e) {
             showArray.push(formArray[i]['value']);
     }
     query["show"] = JSON.stringify(showArray);
-    //console.log(query);
+    console.log(query);
     returnQuery(query).done(function(result) {
-        //console.log(result);
+        console.log(result);
         var resultArray = JSON.parse(result);
         if (resultArray.length > 0) {
             $("#playerButtons").removeClass("buttonContainer").addClass("hide");
@@ -183,12 +183,13 @@ $('#prevPlaylistBtn').on('click', function(e) {
     mc.mediaLoader();
 });
 
-$('#makeBig').on('click', function(e) {
-    mc.player.setSize(1066, 480);
-});
-
-$('#makeSmall').on('click', function(e) {
-    mc.player.setSize(640, 390);
+$("button[data-toggle=collapse]").click(function(e){
+    var nav = $("#header-nav");
+    if (!nav.hasClass("nav-hide")) {
+        nav.addClass("nav-hide");
+    } else if(nav.hasClass("nav-hide")) {
+        nav.removeClass("nav-hide");
+    }
 });
 
 $("input[name=show]").click(function(e) {
@@ -238,7 +239,6 @@ $("#sort-desc").click(function(e) {
 $(window).resize(function(e) {
     resizePlayer();
 });
-
 
 //Event listener debugger
 /*(function () {
