@@ -14,4 +14,8 @@ assets/img/**
 
 favicon.ico
 
-assets/php/yt-key.php
+*yt-key.php
+
+index
+
+*log.txt
